@@ -1,0 +1,186 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Carte de visite digitale - Sly Barber / Pheno&Co</title>
+  <style>
+    :root{
+      --bg:#070707;
+      --panel:#0d0d0d;
+      --gold:#d7a14b;
+      --gold-soft:#f1c57a;
+      --text:#f7f2ea;
+      --muted:#d7d0c7;
+    }
+    *{box-sizing:border-box}
+    body{
+      margin:0;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Arial, sans-serif;
+      background:
+        radial-gradient(circle at top, rgba(215,161,75,.18), transparent 24%),
+        radial-gradient(circle at bottom, rgba(215,161,75,.12), transparent 18%),
+        #000;
+      color:var(--text);
+      min-height:100vh;
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      padding:24px;
+    }
+    .card{
+      width:min(100%, 460px);
+      background:linear-gradient(180deg, rgba(18,18,18,.96), rgba(8,8,8,.98));
+      border:1.5px solid rgba(215,161,75,.85);
+      border-radius:28px;
+      padding:28px 22px 24px;
+      box-shadow:0 0 0 1px rgba(255,214,153,.08) inset, 0 12px 40px rgba(0,0,0,.55);
+      position:relative;
+      overflow:hidden;
+    }
+    .glow{
+      position:absolute;
+      inset:auto 10% 0 10%;
+      height:2px;
+      background:linear-gradient(90deg, transparent, var(--gold-soft), transparent);
+      box-shadow:0 0 18px rgba(241,197,122,.85);
+    }
+    .glow.top{top:0; bottom:auto;}
+    .brand{
+      text-align:center;
+      margin-bottom:16px;
+    }
+    .brand .name{
+      font-family: Georgia, "Times New Roman", serif;
+      font-style:italic;
+      font-weight:700;
+      letter-spacing:.5px;
+      line-height:1;
+      font-size: clamp(2.6rem, 8vw, 4rem);
+      color:var(--gold-soft);
+      text-shadow:0 0 12px rgba(215,161,75,.16);
+    }
+    .brand .sub{
+      display:inline-block;
+      margin-top:8px;
+      border-top:2px solid rgba(215,161,75,.65);
+      border-bottom:2px solid rgba(215,161,75,.65);
+      padding:6px 18px;
+      color:#f3d298;
+      letter-spacing:2px;
+      font-weight:800;
+    }
+    .tagline, .loc{
+      text-align:center;
+      margin:8px 0;
+    }
+    .tagline{
+      color:var(--gold-soft);
+      font-weight:700;
+      font-size:1.35rem;
+    }
+    .subline{
+      text-align:center;
+      color:var(--muted);
+      font-size:1rem;
+      margin-bottom:8px;
+    }
+    .loc{
+      color:var(--text);
+      font-weight:700;
+      line-height:1.5;
+      margin-bottom:18px;
+    }
+    .section-title{
+      display:flex;
+      align-items:center;
+      gap:12px;
+      margin:16px 0 12px;
+      color:var(--gold-soft);
+      font-weight:800;
+      font-size:1.05rem;
+      justify-content:center;
+    }
+    .section-title::before, .section-title::after{
+      content:"";
+      height:1px;
+      flex:1;
+      background:linear-gradient(90deg, transparent, rgba(215,161,75,.8), transparent);
+    }
+    .buttons{
+      display:grid;
+      gap:12px;
+    }
+    .btn{
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      gap:10px;
+      width:100%;
+      text-decoration:none;
+      color:#fff8ef;
+      background:linear-gradient(180deg, rgba(215,161,75,.18), rgba(215,161,75,.08));
+      border:1px solid rgba(215,161,75,.6);
+      border-radius:16px;
+      padding:15px 14px;
+      font-weight:800;
+      font-size:1.02rem;
+      transition:.2s ease;
+      box-shadow:0 0 0 1px rgba(255,214,153,.05) inset;
+    }
+    .btn:hover{
+      transform:translateY(-1px);
+      background:linear-gradient(180deg, rgba(215,161,75,.24), rgba(215,161,75,.10));
+    }
+    .small{
+      text-align:center;
+      color:var(--muted);
+      font-size:.95rem;
+      line-height:1.5;
+      margin-top:16px;
+    }
+    .quote{
+      text-align:center;
+      color:var(--gold-soft);
+      font-family: Georgia, "Times New Roman", serif;
+      font-style:italic;
+      font-size:1.55rem;
+      line-height:1.35;
+      margin-top:20px;
+    }
+    .footer{
+      text-align:center;
+      color:#d8c6a6;
+      font-size:.9rem;
+      margin-top:16px;
+    }
+  </style>
+</head>
+<body>
+  <main class="card">
+    <div class="glow top"></div>
+
+    <section class="brand">
+      <div class="name">Pheno&amp;Co</div>
+      <div class="sub">BARBER SHOP</div>
+    </section>
+
+    <div class="tagline">Coupe • Dégradé • Barbe</div>
+    <div class="subline">Espace pro • Location de fauteuil</div>
+    <div class="loc">18 rue d’Alger<br>Montpellier centre</div>
+
+    <div class="section-title">Accès direct</div>
+
+    <div class="buttons">
+      <a class="btn" href="https://phenoandco.fr/" target="_blank" rel="noopener">📅 Prendre rendez-vous</a>
+      <a class="btn" href="https://phenoandco.fr/location/" target="_blank" rel="noopener">💼 Louer un fauteuil</a>
+      <a class="btn" href="https://wa.me/33769432605" target="_blank" rel="noopener">📲 WhatsApp</a>
+      <a class="btn" href="https://www.google.com/maps/search/?api=1&query=18+rue+d%27Alger+34000+Montpellier" target="_blank" rel="noopener">📍 Itinéraire</a>
+      <a class="btn" href="tel:+33769432605">📞 Appeler</a>
+    </div>
+
+    <div class="quote">Tu viens quand tu veux.<br>Tu travailles comme tu veux.</div>
+    <div class="glow"></div>
+  </main>
+</body>
+</html>
