@@ -1,0 +1,1157 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Carte Fidélité — Pheno&Co</title>
+  <meta name="theme-color" content="#070707"/>
+  <meta name="apple-mobile-web-app-capable" content="yes"/>
+  <meta name="apple-mobile-web-app-status-bar-style" content="black"/>
+  <meta name="apple-mobile-web-app-title" content="Fidélité"/>
+
+  <script>
+    let deferredPrompt = null;
+    window.addEventListener('beforeinstallprompt', function(e) {
+      e.preventDefault();
+      deferredPrompt = e;
+    });
+    const _manifest = {
+      name: "Pheno&Co Fidélité",
+      short_name: "Fidélité",
+      display: "standalone",
+      background_color: "#070707",
+      theme_color: "#070707",
+      start_url: "./fidelite.html"
+    };
+    const _blob = new Blob([JSON.stringify(_manifest)], {type:'application/json'});
+    const _mlink = document.createElement('link');
+    _mlink.rel = 'manifest';
+    _mlink.href = URL.createObjectURL(_blob);
+    document.head.appendChild(_mlink);
+  </script>
+
+  <script src="https://cdn.jsdelivr.net/npm/qrcode/build/qrcode.min.js"></script>
+  <script src="https://unpkg.com/html5-qrcode@2.3.8/html5-qrcode.min.js" defer></script>
+
+  <style>
+    :root {
+      --bg: #070707;
+      --gold: #d7a14b;
+      --gold-soft: #f1c57a;
+      --text: #f7f2ea;
+      --muted: #d7d0c7;
+      --stamp-filled: #d7a14b;
+      --stamp-empty: rgba(215,161,75,.12);
+      --stamp-size: 50px;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    html, body { background: #070707 !important; min-height: 100vh; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Arial, sans-serif;
+      background:
+        radial-gradient(circle at top, rgba(215,161,75,.18), transparent 24%),
+        radial-gradient(circle at bottom, rgba(215,161,75,.12), transparent 18%),
+        #000;
+      color: var(--text);
+      min-height: 100vh;
+      display: flex;
+      align-items: flex-start;
+      justify-content: center;
+      padding: 16px 16px 40px;
+    }
+
+    .screen {
+      display: none;
+      flex-direction: column;
+      align-items: center;
+      width: 100%;
+      max-width: 460px;
+    }
+    .screen.active { display: flex; }
+
+    .card {
+      width: 100%;
+      background: linear-gradient(180deg, rgba(18,18,18,.96), rgba(8,8,8,.98));
+      border: 1.5px solid rgba(215,161,75,.85);
+      border-radius: 28px;
+      padding: 24px 22px;
+      box-shadow: 0 0 0 1px rgba(255,214,153,.08) inset, 0 12px 40px rgba(0,0,0,.55);
+      position: relative;
+      overflow: hidden;
+      margin-top: 20px;
+    }
+    .glow {
+      position: absolute;
+      inset: auto 10% 0 10%;
+      height: 2px;
+      background: linear-gradient(90deg, transparent, var(--gold-soft), transparent);
+      box-shadow: 0 0 18px rgba(241,197,122,.85);
+    }
+    .glow.top { top: 0; bottom: auto; }
+
+    .logo-area {
+      text-align: center;
+      margin-bottom: 20px;
+      user-select: none;
+      -webkit-user-select: none;
+      cursor: default;
+    }
+    .logo-title {
+      font-family: Georgia, "Times New Roman", serif;
+      font-style: italic;
+      font-size: 2.4rem;
+      color: var(--gold-soft);
+      line-height: 1;
+      letter-spacing: 1px;
+    }
+    .logo-sub {
+      font-size: .7rem;
+      letter-spacing: 4px;
+      color: var(--muted);
+      text-transform: uppercase;
+      margin-top: 6px;
+      border-top: 1px solid rgba(215,161,75,.3);
+      border-bottom: 1px solid rgba(215,161,75,.3);
+      padding: 3px 0;
+      display: inline-block;
+    }
+
+    .btn {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      text-decoration: none;
+      color: #fff8ef;
+      background: linear-gradient(180deg, rgba(215,161,75,.18), rgba(215,161,75,.08));
+      border: 1px solid rgba(215,161,75,.6);
+      border-radius: 14px;
+      padding: 14px 16px;
+      font-weight: 800;
+      font-size: .92rem;
+      font-family: inherit;
+      cursor: pointer;
+      transition: .2s ease;
+      width: 100%;
+      margin-bottom: 10px;
+    }
+    .btn:last-child { margin-bottom: 0; }
+    .btn:active { transform: scale(.97); }
+    .btn-gold {
+      background: linear-gradient(180deg, rgba(215,161,75,.35), rgba(215,161,75,.18));
+      border-color: var(--gold);
+    }
+    .btn-outline {
+      background: transparent;
+      border-color: rgba(215,161,75,.3);
+      color: var(--muted);
+      font-weight: 600;
+      font-size: .85rem;
+    }
+    .btn-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px;
+      margin-top: 16px;
+    }
+    .btn-grid .btn { margin-bottom: 0; font-size: .82rem; padding: 12px 8px; }
+
+    .section-title {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      margin: 0 0 16px;
+      color: var(--gold-soft);
+      font-weight: 800;
+      font-size: .95rem;
+      justify-content: center;
+    }
+    .section-title::before, .section-title::after {
+      content: "";
+      height: 1px;
+      flex: 1;
+      background: linear-gradient(90deg, transparent, rgba(215,161,75,.8), transparent);
+    }
+
+    .form-group { margin-bottom: 14px; }
+    .form-group label {
+      display: block;
+      color: var(--gold-soft);
+      font-size: .82rem;
+      font-weight: 700;
+      margin-bottom: 6px;
+      letter-spacing: .5px;
+    }
+    .form-group input {
+      width: 100%;
+      background: rgba(215,161,75,.06);
+      border: 1px solid rgba(215,161,75,.4);
+      border-radius: 12px;
+      padding: 12px 14px;
+      color: var(--text);
+      font-size: .95rem;
+      font-family: inherit;
+      outline: none;
+      transition: border-color .2s;
+    }
+    .form-group input:focus { border-color: var(--gold); }
+    .form-group input::placeholder { color: rgba(215,161,75,.3); }
+
+    .error-msg {
+      color: #e57373;
+      font-size: .8rem;
+      margin-top: 5px;
+      display: none;
+    }
+    .error-msg.visible { display: block; }
+
+    .stamps-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 12px;
+      padding: 8px 0 16px;
+      justify-items: center;
+    }
+    .stamp {
+      width: var(--stamp-size);
+      height: var(--stamp-size);
+      border-radius: 50%;
+      border: 2px solid rgba(215,161,75,.4);
+      background: var(--stamp-empty);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1.3rem;
+      transition: background .4s ease, box-shadow .4s ease, border-color .4s ease;
+    }
+    .stamp.filled {
+      background: var(--stamp-filled);
+      border-color: var(--gold-soft);
+      box-shadow: 0 0 14px rgba(215,161,75,.55);
+    }
+
+    .client-name {
+      text-align: center;
+      font-family: Georgia, serif;
+      font-size: 1.4rem;
+      color: var(--gold-soft);
+      font-style: italic;
+      margin-bottom: 4px;
+    }
+    .client-since {
+      text-align: center;
+      color: var(--muted);
+      font-size: .82rem;
+      margin-bottom: 12px;
+    }
+
+    .reward-banner {
+      background: linear-gradient(135deg, rgba(215,161,75,.2), rgba(215,161,75,.06));
+      border: 1.5px solid var(--gold);
+      border-radius: 14px;
+      padding: 14px 16px;
+      text-align: center;
+      color: var(--gold-soft);
+      font-weight: 800;
+      font-size: .95rem;
+      margin-bottom: 14px;
+      display: none;
+    }
+    .reward-banner.visible { display: block; }
+
+    .qr-wrapper {
+      background: #fff;
+      border-radius: 14px;
+      padding: 12px;
+      display: inline-block;
+      margin: 12px auto;
+    }
+
+    .qr-hint {
+      text-align: center;
+      font-size: .75rem;
+      color: var(--muted);
+      margin-top: 4px;
+    }
+    .qr-hint.warn { color: #e57373; }
+
+    .overlay {
+      display: none;
+      position: fixed;
+      inset: 0;
+      background: rgba(0,0,0,.88);
+      z-index: 100;
+      align-items: center;
+      justify-content: center;
+      padding: 20px;
+    }
+    .overlay.open { display: flex; }
+    .popup {
+      background: linear-gradient(180deg, #161616, #0a0a0a);
+      border: 1.5px solid rgba(215,161,75,.8);
+      border-radius: 24px;
+      padding: 28px 22px;
+      width: min(100%, 400px);
+    }
+    .popup h2 {
+      text-align: center;
+      color: var(--gold-soft);
+      font-family: Georgia, serif;
+      font-style: italic;
+      font-size: 1.5rem;
+      margin-bottom: 20px;
+    }
+
+    .pin-input {
+      width: 100%;
+      background: rgba(215,161,75,.06);
+      border: 1px solid rgba(215,161,75,.4);
+      border-radius: 12px;
+      padding: 14px;
+      color: var(--text);
+      font-size: 1.3rem;
+      font-family: inherit;
+      text-align: center;
+      letter-spacing: 6px;
+      outline: none;
+      margin-bottom: 14px;
+    }
+    .pin-input:focus { border-color: var(--gold); }
+
+    .back-btn {
+      background: none;
+      border: none;
+      color: rgba(215,161,75,.6);
+      font-size: .85rem;
+      cursor: pointer;
+      font-family: inherit;
+      padding: 2px 0;
+      margin-bottom: 14px;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .admin-client-box {
+      background: rgba(215,161,75,.07);
+      border: 1px solid rgba(215,161,75,.3);
+      border-radius: 14px;
+      padding: 16px;
+      margin-bottom: 16px;
+      text-align: center;
+    }
+    .admin-client-box .acb-name {
+      font-size: 1.3rem;
+      font-weight: 800;
+      color: var(--gold-soft);
+      font-family: Georgia, serif;
+      font-style: italic;
+    }
+    .admin-client-box .acb-visits {
+      color: var(--muted);
+      font-size: .88rem;
+      margin-top: 4px;
+    }
+    .admin-client-box .acb-age {
+      font-size: .75rem;
+      color: var(--muted);
+      margin-top: 6px;
+    }
+    .admin-client-box .acb-age.warn { color: #e57373; }
+
+    .divider {
+      text-align: center;
+      color: rgba(215,161,75,.35);
+      font-size: .78rem;
+      margin: 12px 0;
+    }
+
+    .big-icon { font-size: 4rem; text-align: center; margin: 12px 0; }
+    .big-text {
+      text-align: center;
+      font-family: Georgia, serif;
+      font-style: italic;
+      font-size: 1.4rem;
+      color: var(--gold-soft);
+      margin-bottom: 6px;
+    }
+    .sub-text {
+      text-align: center;
+      color: var(--muted);
+      font-size: .88rem;
+      margin-bottom: 16px;
+      line-height: 1.5;
+    }
+    .visit-badge {
+      text-align: center;
+      font-size: 2.2rem;
+      font-weight: 900;
+      color: var(--gold-soft);
+      font-family: Georgia, serif;
+      margin: 6px 0 12px;
+    }
+
+    .install-step {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      padding: 12px 0;
+      border-bottom: 1px solid rgba(215,161,75,.12);
+    }
+    .install-step:last-of-type { border-bottom: none; }
+    .step-num {
+      width: 28px;
+      height: 28px;
+      border-radius: 50%;
+      background: var(--gold);
+      color: #000;
+      font-weight: 900;
+      font-size: .85rem;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+    }
+    .step-text { color: var(--text); font-size: .88rem; line-height: 1.45; }
+
+    #qr-reader { width: 100%; border-radius: 14px; overflow: hidden; }
+    #qr-reader video { border-radius: 12px; }
+  </style>
+</head>
+<body>
+
+  <!-- ═══════════════════════════════════════
+       ÉCRAN 1 : ACCUEIL
+  ═══════════════════════════════════════ -->
+  <section id="screen-accueil" class="screen">
+    <div class="card">
+      <div class="glow top"></div>
+      <div class="logo-area" id="logo-accueil">
+        <div class="logo-title">Pheno&amp;Co</div>
+        <div class="logo-sub">Carte Fidélité</div>
+      </div>
+      <button class="btn btn-gold" onclick="showScreen('screen-creation')">✂️ Créer ma carte</button>
+      <button class="btn" onclick="handleExistingCard()">🎫 J'ai déjà une carte</button>
+      <div class="glow"></div>
+    </div>
+  </section>
+
+  <!-- ═══════════════════════════════════════
+       ÉCRAN 2 : CRÉATION
+  ═══════════════════════════════════════ -->
+  <section id="screen-creation" class="screen">
+    <div class="card">
+      <div class="glow top"></div>
+      <button class="back-btn" onclick="showScreen('screen-accueil')">← Retour</button>
+      <div class="section-title">Créer ma carte</div>
+      <div class="form-group">
+        <label>Prénom *</label>
+        <input type="text" id="input-prenom" placeholder="Votre prénom" autocomplete="given-name"/>
+      </div>
+      <div class="form-group">
+        <label>Nom *</label>
+        <input type="text" id="input-nom" placeholder="Votre nom" autocomplete="family-name"/>
+      </div>
+      <div class="form-group">
+        <label>Téléphone *</label>
+        <input type="tel" id="input-tel" placeholder="06 12 34 56 78" autocomplete="tel"/>
+        <div class="error-msg" id="tel-error">Numéro de téléphone invalide.</div>
+      </div>
+      <button class="btn btn-gold" onclick="submitCreation()">🎫 Créer ma carte de fidélité</button>
+      <div class="glow"></div>
+    </div>
+  </section>
+
+  <!-- ═══════════════════════════════════════
+       ÉCRAN 3 : INSTALLATION PWA
+  ═══════════════════════════════════════ -->
+  <section id="screen-install" class="screen">
+    <div class="card">
+      <div class="glow top"></div>
+      <div class="logo-area">
+        <div class="logo-title">Pheno&amp;Co</div>
+        <div class="logo-sub">Carte Fidélité</div>
+      </div>
+      <div class="section-title">🎉 Carte créée !</div>
+
+      <div id="install-android" style="display:none">
+        <p style="text-align:center;color:var(--muted);font-size:.88rem;margin-bottom:16px;line-height:1.5">
+          Installez votre carte directement sur l'écran d'accueil de votre téléphone pour y accéder en un tap.
+        </p>
+        <button class="btn btn-gold" onclick="triggerInstall()">📲 Installer sur mon téléphone</button>
+      </div>
+
+      <div id="install-ios" style="display:none">
+        <p style="text-align:center;color:var(--muted);font-size:.85rem;margin-bottom:14px;line-height:1.5">
+          Ajoutez votre carte à l'écran d'accueil pour y accéder directement :
+        </p>
+        <div class="install-step">
+          <div class="step-num">1</div>
+          <div class="step-text">Appuyez sur l'icône <strong style="color:var(--gold-soft)">Partager ⬆</strong> en bas de Safari</div>
+        </div>
+        <div class="install-step">
+          <div class="step-num">2</div>
+          <div class="step-text">Sélectionnez <strong style="color:var(--gold-soft)">"Sur l'écran d'accueil"</strong></div>
+        </div>
+        <div class="install-step">
+          <div class="step-num">3</div>
+          <div class="step-text">Confirmez en appuyant sur <strong style="color:var(--gold-soft)">"Ajouter"</strong></div>
+        </div>
+      </div>
+
+      <div id="install-other" style="display:none">
+        <p style="text-align:center;color:var(--muted);font-size:.88rem;line-height:1.5">
+          Utilisez le menu de votre navigateur pour ajouter cette page à l'écran d'accueil.
+        </p>
+      </div>
+
+      <button class="btn btn-outline" style="margin-top:16px" onclick="showScreen('screen-carte')">
+        Continuer sans installer →
+      </button>
+      <div class="glow"></div>
+    </div>
+  </section>
+
+  <!-- ═══════════════════════════════════════
+       ÉCRAN 4 : LA CARTE FIDÉLITÉ
+  ═══════════════════════════════════════ -->
+  <section id="screen-carte" class="screen">
+    <div class="card">
+      <div class="glow top"></div>
+
+      <div class="logo-area" id="logo-carte">
+        <div class="logo-title">Pheno&amp;Co</div>
+        <div class="logo-sub">Carte Fidélité</div>
+      </div>
+
+      <div class="client-name" id="card-name">—</div>
+      <div class="client-since" id="card-since">Carte créée le —</div>
+
+      <div class="reward-banner" id="reward-banner">
+        🏆 Votre prochaine coupe est offerte !
+      </div>
+
+      <div class="section-title">Tampons fidélité</div>
+      <div class="stamps-grid" id="stamps-grid"></div>
+      <div style="text-align:center;color:var(--muted);font-size:.78rem;margin-bottom:4px" id="stamps-label">0 / 6 visites</div>
+
+      <div class="section-title" style="margin-top:14px">Mon QR code</div>
+      <div style="text-align:center">
+        <div class="qr-wrapper"><canvas id="qr-canvas"></canvas></div>
+        <div class="qr-hint" id="qr-hint">Présentez ce QR à votre coiffeur</div>
+      </div>
+
+      <div class="btn-grid">
+        <a class="btn" href="./index.html">🏠 Hub Pheno&amp;Co</a>
+        <a class="btn" href="https://www.instagram.com/phenoandco?igsh=MmxmNGdic2J6OTk5" target="_blank" rel="noopener">📸 Catalogue photos</a>
+      </div>
+
+      <div class="glow"></div>
+    </div>
+  </section>
+
+  <!-- ═══════════════════════════════════════
+       ÉCRAN 5 : SCAN ADMIN
+  ═══════════════════════════════════════ -->
+  <section id="screen-admin-scan" class="screen">
+    <div class="card">
+      <div class="glow top"></div>
+      <button class="back-btn" onclick="exitAdmin()">← Retour</button>
+      <div class="section-title">🔒 Mode Administrateur</div>
+
+      <!-- Client détecté automatiquement -->
+      <div id="admin-detected" style="display:none">
+        <div class="admin-client-box">
+          <div class="acb-name" id="admin-client-name">—</div>
+          <div class="acb-visits" id="admin-client-visits">— visites</div>
+          <div class="acb-age" id="admin-qr-age"></div>
+        </div>
+        <button class="btn btn-gold" id="admin-validate-btn" onclick="adminValidateVisit()">✅ Valider une visite</button>
+        <button class="btn btn-outline" onclick="resetAdminToScanner()">Scanner un autre client</button>
+      </div>
+
+      <!-- Scanner + saisie manuelle -->
+      <div id="admin-scanner-area">
+        <p style="text-align:center;color:var(--muted);font-size:.85rem;margin-bottom:14px;line-height:1.5">
+          Scannez le QR du client ou saisissez son numéro manuellement.
+        </p>
+        <div id="qr-reader"></div>
+        <div class="divider">— ou saisie manuelle —</div>
+        <div class="form-group">
+          <label>Téléphone du client</label>
+          <input type="tel" id="admin-manual-tel" placeholder="06 12 34 56 78"/>
+        </div>
+        <div class="form-group">
+          <label>Tampons actuels (0 à 5)</label>
+          <input type="number" id="admin-manual-visits" placeholder="0" min="0" max="5" value="0"/>
+        </div>
+        <button class="btn btn-gold" onclick="adminManualValidate()">✅ Valider la visite</button>
+      </div>
+
+      <!-- QR reçu généré pour le client -->
+      <div id="admin-receipt" style="display:none">
+        <div class="big-text">Visite enregistrée ✓</div>
+        <p style="text-align:center;color:var(--muted);font-size:.85rem;margin-bottom:14px;line-height:1.5">
+          Montrez ce QR au client pour qu'il confirme sur son téléphone.
+        </p>
+        <div style="text-align:center">
+          <div class="qr-wrapper"><canvas id="receipt-canvas"></canvas></div>
+        </div>
+        <div id="receipt-info" style="text-align:center;color:var(--gold-soft);margin-top:8px;font-size:.85rem;font-weight:700"></div>
+        <button class="btn btn-outline" style="margin-top:16px" onclick="resetAdminToScanner()">Nouveau client</button>
+      </div>
+
+      <div class="glow"></div>
+    </div>
+  </section>
+
+  <!-- ═══════════════════════════════════════
+       ÉCRAN 6 : VALIDATION (côté client)
+  ═══════════════════════════════════════ -->
+  <section id="screen-validation" class="screen">
+    <div class="card">
+      <div class="glow top"></div>
+      <div class="big-icon" id="valid-icon">✅</div>
+      <div class="big-text" id="valid-title">Visite validée !</div>
+      <div class="visit-badge" id="valid-badge">1 / 6</div>
+      <div class="sub-text" id="valid-sub">Continuez à accumuler vos tampons.</div>
+      <div class="stamps-grid" id="valid-stamps"></div>
+      <button class="btn btn-gold" style="margin-top:8px" onclick="showScreen('screen-carte')">Voir ma carte →</button>
+      <div class="glow"></div>
+    </div>
+  </section>
+
+  <!-- ═══════════════════════════════════════
+       ÉCRAN 7 : RÉCOMPENSE
+  ═══════════════════════════════════════ -->
+  <section id="screen-recompense" class="screen">
+    <div class="card">
+      <div class="glow top"></div>
+
+      <!-- Vue client -->
+      <div id="reward-client">
+        <div class="big-icon">🏆</div>
+        <div class="big-text">Félicitations !</div>
+        <div style="text-align:center;color:var(--gold-soft);font-size:1.05rem;font-weight:800;margin:12px 0;padding:16px;background:rgba(215,161,75,.08);border:1.5px solid var(--gold);border-radius:14px;line-height:1.4">
+          Votre prochaine coupe est offerte.
+        </div>
+        <div class="sub-text">Montrez cet écran à votre coiffeur pour bénéficier de votre récompense.</div>
+        <div class="section-title">QR de récompense</div>
+        <div style="text-align:center">
+          <div class="qr-wrapper"><canvas id="reward-canvas"></canvas></div>
+        </div>
+        <button class="btn btn-outline" style="margin-top:16px" onclick="showScreen('screen-carte')">← Ma carte</button>
+      </div>
+
+      <!-- Vue admin -->
+      <div id="reward-admin" style="display:none">
+        <div class="big-icon">🎁</div>
+        <div class="big-text">Récompense disponible.</div>
+        <div class="admin-client-box">
+          <div class="acb-name" id="reward-admin-name">—</div>
+          <div class="acb-visits">6 / 6 tampons — coupe offerte</div>
+        </div>
+        <button class="btn btn-gold" onclick="adminRedeemReward()">✅ Valider la récompense gratuite</button>
+        <p style="text-align:center;color:var(--muted);font-size:.75rem;margin-top:6px">Les tampons seront remis à zéro.</p>
+        <div id="reward-reset-block" style="display:none;margin-top:16px">
+          <p style="text-align:center;color:var(--muted);font-size:.85rem;margin-bottom:12px;line-height:1.5">
+            Montrez ce QR au client pour remettre sa carte à zéro.
+          </p>
+          <div style="text-align:center">
+            <div class="qr-wrapper"><canvas id="reset-canvas"></canvas></div>
+          </div>
+        </div>
+      </div>
+
+      <div class="glow"></div>
+    </div>
+  </section>
+
+  <!-- ═══════════════════════════════════════
+       MODALE PIN ADMIN
+  ═══════════════════════════════════════ -->
+  <div class="overlay" id="pin-modal" onclick="if(event.target===this)closePinModal()">
+    <div class="popup">
+      <div class="section-title">Accès administrateur</div>
+      <p style="text-align:center;color:var(--muted);font-size:.85rem;margin-bottom:16px">
+        Entrez le code PIN pour accéder au mode scan.
+      </p>
+      <input type="password" class="pin-input" id="pin-input" placeholder="• • • •" maxlength="20" autocomplete="off"/>
+      <div class="error-msg" id="pin-error" style="text-align:center;margin-bottom:10px">Code incorrect.</div>
+      <button class="btn btn-gold" onclick="submitPin()">Valider</button>
+      <button class="btn btn-outline" style="margin-top:8px" onclick="closePinModal()">Annuler</button>
+    </div>
+  </div>
+
+  <script>
+    // ═══════════════════════════════════════
+    // CONSTANTES
+    // ═══════════════════════════════════════
+    var ADMIN_PIN = 'PHENO2026';
+    var STORAGE_KEY = 'pheno_client';
+    var ADMIN_KEY = 'pheno_admin_session';
+    var RECEIPT_TTL = 5 * 60 * 1000;   // 5 min
+    var QR_WARN_MS  = 30 * 60 * 1000;  // 30 min
+
+    // ═══════════════════════════════════════
+    // NAVIGATION
+    // ═══════════════════════════════════════
+    var html5Scanner = null;
+
+    function showScreen(id) {
+      if (id !== 'screen-admin-scan') stopScanner();
+      document.querySelectorAll('.screen').forEach(function(s) { s.classList.remove('active'); });
+      document.getElementById(id).classList.add('active');
+      window.scrollTo(0, 0);
+      if (id === 'screen-carte') renderCard();
+    }
+
+    function stopScanner() {
+      if (html5Scanner) {
+        try { html5Scanner.stop().catch(function(){}); } catch(e) {}
+        html5Scanner = null;
+      }
+    }
+
+    // ═══════════════════════════════════════
+    // STORAGE
+    // ═══════════════════════════════════════
+    function getClient() {
+      try { return JSON.parse(localStorage.getItem(STORAGE_KEY)); } catch(e) { return null; }
+    }
+    function saveClient(c) { localStorage.setItem(STORAGE_KEY, JSON.stringify(c)); }
+
+    function isAdmin() {
+      try {
+        var s = JSON.parse(localStorage.getItem(ADMIN_KEY));
+        return s && (Date.now() - s.ts < 4 * 60 * 60 * 1000);
+      } catch(e) { return false; }
+    }
+    function setAdmin() { localStorage.setItem(ADMIN_KEY, JSON.stringify({ts: Date.now()})); }
+
+    // ═══════════════════════════════════════
+    // UTILITAIRES
+    // ═══════════════════════════════════════
+    function fmtDate(iso) {
+      if (!iso) return '—';
+      var p = iso.split('-');
+      return p[2] + '/' + p[1] + '/' + p[0];
+    }
+    function todayISO() { return new Date().toISOString().split('T')[0]; }
+
+    function sign(phone, tag) {
+      return btoa(ADMIN_PIN + phone + String(tag)).slice(0, 8);
+    }
+    function verifySig(phone, tag, sig) { return sign(phone, tag) === sig; }
+
+    function baseUrl() { return window.location.href.split('#')[0]; }
+
+    // ═══════════════════════════════════════
+    // GÉNÉRATION QR
+    // ═══════════════════════════════════════
+    function makeQR(canvasId, text) {
+      var canvas = document.getElementById(canvasId);
+      if (!canvas || typeof QRCode === 'undefined') return;
+      QRCode.toCanvas(canvas, text, {width: 200, margin: 1, color: {dark:'#000', light:'#fff'}}, function(err){
+        if (err) console.error('QR error', err);
+      });
+    }
+
+    function clientQrUrl(client) {
+      var ts = Math.floor(Date.now() / 1000);
+      var p = new URLSearchParams({p: client.phone, n: client.prenom, v: String(client.visits), t: String(ts)});
+      return baseUrl() + '#scan?' + p.toString();
+    }
+
+    function receiptUrl(phone, newVisits) {
+      var ts = Math.floor(Date.now() / 1000);
+      var p = new URLSearchParams({p: phone, v: String(newVisits), sig: sign(phone, newVisits), ts: String(ts)});
+      return baseUrl() + '#receipt?' + p.toString();
+    }
+
+    function rewardUrl(client) {
+      var ts = Math.floor(Date.now() / 1000);
+      var p = new URLSearchParams({p: client.phone, n: client.prenom, sig: sign(client.phone, 'reward'), ts: String(ts)});
+      return baseUrl() + '#reward?' + p.toString();
+    }
+
+    function resetUrl(phone) {
+      var ts = Math.floor(Date.now() / 1000);
+      var p = new URLSearchParams({p: phone, sig: sign(phone, 'reset'), ts: String(ts)});
+      return baseUrl() + '#reset?' + p.toString();
+    }
+
+    // ═══════════════════════════════════════
+    // RENDU CARTE
+    // ═══════════════════════════════════════
+    function renderStamps(containerId, filled) {
+      var grid = document.getElementById(containerId);
+      grid.innerHTML = '';
+      for (var i = 0; i < 6; i++) {
+        var d = document.createElement('div');
+        d.className = 'stamp' + (i < filled ? ' filled' : '');
+        d.textContent = i < filled ? '✂️' : '';
+        grid.appendChild(d);
+      }
+    }
+
+    function renderCard() {
+      var c = getClient();
+      if (!c) { showScreen('screen-accueil'); return; }
+      document.getElementById('card-name').textContent = c.prenom + ' ' + c.nom;
+      document.getElementById('card-since').textContent = 'Carte créée le ' + fmtDate(c.createdAt);
+      document.getElementById('reward-banner').classList.toggle('visible', c.visits >= 6);
+      renderStamps('stamps-grid', c.visits);
+      document.getElementById('stamps-label').textContent = c.visits + ' / 6 visites';
+      makeQR('qr-canvas', clientQrUrl(c));
+    }
+
+    // ═══════════════════════════════════════
+    // ÉCRAN 1 : ACCUEIL
+    // ═══════════════════════════════════════
+    function handleExistingCard() {
+      var c = getClient();
+      if (c) { showScreen('screen-carte'); }
+      else { alert('Aucune carte trouvée sur ce téléphone.\nCréez votre carte pour commencer.'); }
+    }
+
+    // ═══════════════════════════════════════
+    // ÉCRAN 2 : CRÉATION
+    // ═══════════════════════════════════════
+    function submitCreation() {
+      var prenom = document.getElementById('input-prenom').value.trim();
+      var nom    = document.getElementById('input-nom').value.trim();
+      var tel    = document.getElementById('input-tel').value.replace(/[\s.\-()+]/g, '');
+      var telErr = document.getElementById('tel-error');
+
+      if (!prenom || !nom) { alert('Veuillez remplir tous les champs.'); return; }
+      if (!/^(33|0)[0-9]{9}$/.test(tel)) { telErr.classList.add('visible'); return; }
+      telErr.classList.remove('visible');
+
+      var phone = tel.startsWith('33') ? '0' + tel.slice(2) : tel;
+      saveClient({phone: phone, prenom: prenom, nom: nom, createdAt: todayISO(), visits: 0, rewardsClaimed: 0});
+      setupInstallScreen();
+      showScreen('screen-install');
+    }
+
+    // ═══════════════════════════════════════
+    // ÉCRAN 3 : INSTALL PWA
+    // ═══════════════════════════════════════
+    function setupInstallScreen() {
+      if (window.matchMedia('(display-mode: standalone)').matches) { showScreen('screen-carte'); return; }
+      var isIOS = /iphone|ipad|ipod/i.test(navigator.userAgent) && !window.MSStream;
+      var hasPrompt = !!deferredPrompt && !isIOS;
+      document.getElementById('install-android').style.display = hasPrompt ? 'block' : 'none';
+      document.getElementById('install-ios').style.display = isIOS ? 'block' : 'none';
+      document.getElementById('install-other').style.display = (!hasPrompt && !isIOS) ? 'block' : 'none';
+    }
+
+    function triggerInstall() {
+      if (!deferredPrompt) return;
+      deferredPrompt.prompt();
+      deferredPrompt.userChoice.then(function() { deferredPrompt = null; showScreen('screen-carte'); });
+    }
+
+    // ═══════════════════════════════════════
+    // LONG-PRESS LOGO → ACCÈS ADMIN
+    // ═══════════════════════════════════════
+    var _lpt = null;
+    function setupLongPress(elId) {
+      var el = document.getElementById(elId);
+      if (!el) return;
+      function start() { _lpt = setTimeout(function() { isAdmin() ? startAdminScan() : openPinModal(); }, 700); }
+      function cancel() { clearTimeout(_lpt); }
+      el.addEventListener('touchstart', start, {passive: true});
+      el.addEventListener('touchend', cancel);
+      el.addEventListener('touchmove', cancel);
+      el.addEventListener('mousedown', start);
+      el.addEventListener('mouseup', cancel);
+      el.addEventListener('mouseleave', cancel);
+    }
+
+    // ═══════════════════════════════════════
+    // MODALE PIN
+    // ═══════════════════════════════════════
+    var _pendingHash = null;
+    function openPinModal() {
+      document.getElementById('pin-modal').classList.add('open');
+      document.getElementById('pin-input').value = '';
+      document.getElementById('pin-error').classList.remove('visible');
+      setTimeout(function() { document.getElementById('pin-input').focus(); }, 150);
+    }
+    function closePinModal() { document.getElementById('pin-modal').classList.remove('open'); }
+    function submitPin() {
+      var val = document.getElementById('pin-input').value;
+      if (val === ADMIN_PIN) {
+        closePinModal();
+        setAdmin();
+        if (_pendingHash && _pendingHash.startsWith('#scan?')) {
+          var h = _pendingHash; _pendingHash = null;
+          routeScanHash(h.substring(6));
+        } else {
+          startAdminScan();
+        }
+      } else {
+        document.getElementById('pin-error').classList.add('visible');
+      }
+    }
+    document.getElementById('pin-input').addEventListener('keydown', function(e) { if (e.key === 'Enter') submitPin(); });
+
+    // ═══════════════════════════════════════
+    // ÉCRAN 5 : ADMIN SCAN
+    // ═══════════════════════════════════════
+    var _adminClient = null;
+
+    function startAdminScan() {
+      _adminClient = null;
+      document.getElementById('admin-detected').style.display = 'none';
+      document.getElementById('admin-scanner-area').style.display = 'block';
+      document.getElementById('admin-receipt').style.display = 'none';
+      document.getElementById('admin-manual-tel').value = '';
+      document.getElementById('admin-manual-visits').value = '0';
+      showScreen('screen-admin-scan');
+      initScanner();
+    }
+
+    function initScanner() {
+      stopScanner();
+      var readerEl = document.getElementById('qr-reader');
+      readerEl.innerHTML = '';
+      if (typeof Html5QrcodeScanner === 'undefined') {
+        readerEl.innerHTML = '<p style="text-align:center;color:var(--muted);padding:20px;font-size:.85rem">Scanner non disponible (connexion requise).</p>';
+        return;
+      }
+      html5Scanner = new Html5QrcodeScanner('qr-reader', {fps: 10, qrbox: {width: 240, height: 240}}, false);
+      html5Scanner.render(function(text) { handleScanResult(text); }, function() {});
+    }
+
+    function handleScanResult(text) {
+      var idx = text.indexOf('#scan?');
+      if (idx === -1) return;
+      stopScanner();
+      routeScanHash(text.substring(idx + 6));
+    }
+
+    function routeScanHash(paramStr) {
+      try {
+        var p = new URLSearchParams(paramStr);
+        var phone = p.get('p'), prenom = p.get('n');
+        var visits = parseInt(p.get('v'), 10), ts = parseInt(p.get('t'), 10);
+        if (!phone || !prenom || isNaN(visits) || isNaN(ts)) return;
+        showClientDetected({phone: phone, prenom: prenom, visits: visits, ts: ts});
+      } catch(e) { console.error('scan parse error', e); }
+    }
+
+    function showClientDetected(data) {
+      _adminClient = data;
+      document.getElementById('admin-scanner-area').style.display = 'none';
+      document.getElementById('admin-receipt').style.display = 'none';
+      document.getElementById('admin-detected').style.display = 'block';
+      document.getElementById('admin-client-name').textContent = data.prenom;
+      document.getElementById('admin-client-visits').textContent = data.visits + ' / 6 visites';
+
+      var ageMs = Date.now() - data.ts * 1000;
+      var ageMin = Math.floor(ageMs / 60000);
+      var ageEl = document.getElementById('admin-qr-age');
+      ageEl.textContent = ageMin < 1 ? 'QR généré à l\'instant' : 'QR généré il y a ' + ageMin + ' min';
+      ageEl.className = 'acb-age' + (ageMs > QR_WARN_MS ? ' warn' : '');
+
+      var validateBtn = document.getElementById('admin-validate-btn');
+      if (data.visits >= 6) {
+        validateBtn.textContent = '🏆 Récompense disponible — cliquez pour valider';
+      } else {
+        validateBtn.textContent = '✅ Valider une visite pour ' + data.prenom;
+      }
+
+      if (!document.getElementById('screen-admin-scan').classList.contains('active')) {
+        document.getElementById('admin-detected').style.display = 'block';
+        document.getElementById('admin-scanner-area').style.display = 'none';
+        document.getElementById('admin-receipt').style.display = 'none';
+        showScreen('screen-admin-scan');
+      }
+    }
+
+    function adminValidateVisit() {
+      if (!_adminClient) return;
+      if (_adminClient.visits >= 6) {
+        // Already at max — show reward admin view
+        document.getElementById('reward-client').style.display = 'none';
+        document.getElementById('reward-admin').style.display = 'block';
+        document.getElementById('reward-admin-name').textContent = _adminClient.prenom;
+        document.getElementById('reward-reset-block').style.display = 'none';
+        window._rewardPhone = _adminClient.phone;
+        window._rewardPrenom = _adminClient.prenom;
+        showScreen('screen-recompense');
+        return;
+      }
+      var newVisits = Math.min(_adminClient.visits + 1, 6);
+      showAdminReceipt(_adminClient.phone, _adminClient.prenom, newVisits);
+    }
+
+    function adminManualValidate() {
+      var tel = document.getElementById('admin-manual-tel').value.replace(/[\s.\-()+]/g, '');
+      var cur = parseInt(document.getElementById('admin-manual-visits').value, 10);
+      if (!/^(33|0)[0-9]{9}$/.test(tel)) { alert('Numéro invalide.'); return; }
+      if (isNaN(cur) || cur < 0) cur = 0;
+      var phone = tel.startsWith('33') ? '0' + tel.slice(2) : tel;
+      var newVisits = Math.min(cur + 1, 6);
+      showAdminReceipt(phone, 'Client', newVisits);
+    }
+
+    function showAdminReceipt(phone, prenom, newVisits) {
+      document.getElementById('admin-detected').style.display = 'none';
+      document.getElementById('admin-scanner-area').style.display = 'none';
+      document.getElementById('admin-receipt').style.display = 'block';
+      makeQR('receipt-canvas', receiptUrl(phone, newVisits));
+      var info = newVisits >= 6
+        ? '🏆 ' + prenom + ' atteint 6 / 6 — récompense disponible !'
+        : prenom + ' : ' + newVisits + ' / 6 visites après validation';
+      document.getElementById('receipt-info').textContent = info;
+    }
+
+    function resetAdminToScanner() {
+      document.getElementById('admin-receipt').style.display = 'none';
+      document.getElementById('admin-detected').style.display = 'none';
+      document.getElementById('admin-scanner-area').style.display = 'block';
+      initScanner();
+    }
+
+    function exitAdmin() {
+      stopScanner();
+      var c = getClient();
+      showScreen(c ? 'screen-carte' : 'screen-accueil');
+    }
+
+    // ═══════════════════════════════════════
+    // RÉCOMPENSE : ADMIN REMET À ZÉRO
+    // ═══════════════════════════════════════
+    function adminRedeemReward() {
+      var phone = window._rewardPhone;
+      if (!phone) return;
+      makeQR('reset-canvas', resetUrl(phone));
+      document.getElementById('reward-reset-block').style.display = 'block';
+    }
+
+    // ═══════════════════════════════════════
+    // TRAITEMENT DES HASH REÇUS (côté client)
+    // ═══════════════════════════════════════
+    function processReceipt(paramStr) {
+      try {
+        var p = new URLSearchParams(paramStr);
+        var phone = p.get('p'), v = parseInt(p.get('v'), 10);
+        var sig = p.get('sig'), ts = parseInt(p.get('ts'), 10);
+        if (!phone || isNaN(v) || !sig || isNaN(ts)) { showScreen('screen-accueil'); return; }
+        if (Date.now() - ts * 1000 > RECEIPT_TTL) {
+          alert('Ce QR a expiré (+ de 5 min). Demandez un nouveau QR à votre coiffeur.');
+          var c = getClient(); showScreen(c ? 'screen-carte' : 'screen-accueil'); return;
+        }
+        if (!verifySig(phone, v, sig)) { alert('QR invalide.'); showScreen('screen-accueil'); return; }
+        var client = getClient();
+        if (!client || client.phone !== phone) {
+          alert('Ce QR ne correspond pas à votre carte.');
+          showScreen('screen-accueil'); return;
+        }
+        client.visits = Math.min(v, 6);
+        saveClient(client);
+        showValidationResult(client);
+      } catch(e) { showScreen('screen-accueil'); }
+    }
+
+    function processReset(paramStr) {
+      try {
+        var p = new URLSearchParams(paramStr);
+        var phone = p.get('p'), sig = p.get('sig'), ts = parseInt(p.get('ts'), 10);
+        if (!phone || !sig || isNaN(ts)) { showScreen('screen-accueil'); return; }
+        if (Date.now() - ts * 1000 > RECEIPT_TTL) { alert('Ce QR a expiré.'); showScreen('screen-accueil'); return; }
+        if (!verifySig(phone, 'reset', sig)) { alert('QR invalide.'); showScreen('screen-accueil'); return; }
+        var client = getClient();
+        if (!client || client.phone !== phone) { showScreen('screen-accueil'); return; }
+        client.visits = 0;
+        client.rewardsClaimed = (client.rewardsClaimed || 0) + 1;
+        saveClient(client);
+        showScreen('screen-carte');
+        setTimeout(function() { alert('Récompense utilisée ! Vos tampons sont remis à zéro. Merci pour votre fidélité ✂️'); }, 300);
+      } catch(e) { showScreen('screen-accueil'); }
+    }
+
+    function processReward(paramStr) {
+      try {
+        var p = new URLSearchParams(paramStr);
+        var phone = p.get('p'), prenom = p.get('n');
+        var sig = p.get('sig'), ts = parseInt(p.get('ts'), 10);
+        if (!verifySig(phone, 'reward', sig)) { alert('QR invalide.'); showScreen('screen-accueil'); return; }
+        if (Date.now() - ts * 1000 > QR_WARN_MS) { alert('Ce QR est trop ancien. Demandez au client de le rafraîchir.'); return; }
+        if (isAdmin()) {
+          document.getElementById('reward-client').style.display = 'none';
+          document.getElementById('reward-admin').style.display = 'block';
+          document.getElementById('reward-admin-name').textContent = prenom || phone;
+          document.getElementById('reward-reset-block').style.display = 'none';
+          window._rewardPhone = phone; window._rewardPrenom = prenom;
+          showScreen('screen-recompense');
+        } else {
+          var client = getClient();
+          if (!client || client.phone !== phone) { showScreen('screen-carte'); return; }
+          document.getElementById('reward-client').style.display = 'block';
+          document.getElementById('reward-admin').style.display = 'none';
+          makeQR('reward-canvas', rewardUrl(client));
+          showScreen('screen-recompense');
+        }
+      } catch(e) { showScreen('screen-accueil'); }
+    }
+
+    function showValidationResult(client) {
+      if (client.visits >= 6) {
+        document.getElementById('reward-client').style.display = 'block';
+        document.getElementById('reward-admin').style.display = 'none';
+        makeQR('reward-canvas', rewardUrl(client));
+        showScreen('screen-recompense');
+        return;
+      }
+      document.getElementById('valid-icon').textContent = '✅';
+      document.getElementById('valid-title').textContent = 'Visite validée !';
+      document.getElementById('valid-badge').textContent = client.visits + ' / 6';
+      document.getElementById('valid-sub').textContent =
+        client.visits + ' visite' + (client.visits > 1 ? 's' : '') + ' sur 6 accumulée' + (client.visits > 1 ? 's' : '') + '.';
+      renderStamps('valid-stamps', client.visits);
+      showScreen('screen-validation');
+    }
+
+    // ═══════════════════════════════════════
+    // ROUTAGE AU DÉMARRAGE
+    // ═══════════════════════════════════════
+    function routeOnLoad() {
+      var hash = window.location.hash;
+      history.replaceState(null, '', window.location.pathname + window.location.search);
+
+      if (hash.startsWith('#scan?')) {
+        if (isAdmin()) {
+          showScreen('screen-admin-scan');
+          document.getElementById('admin-detected').style.display = 'none';
+          document.getElementById('admin-scanner-area').style.display = 'block';
+          document.getElementById('admin-receipt').style.display = 'none';
+          routeScanHash(hash.substring(6));
+        } else {
+          _pendingHash = hash;
+          openPinModal();
+        }
+        return;
+      }
+      if (hash.startsWith('#receipt?')) { processReceipt(hash.substring(9)); return; }
+      if (hash.startsWith('#reward?'))  { processReward(hash.substring(8));  return; }
+      if (hash.startsWith('#reset?'))   { processReset(hash.substring(7));   return; }
+
+      var client = getClient();
+      showScreen(client ? 'screen-carte' : 'screen-accueil');
+    }
+
+    // ═══════════════════════════════════════
+    // INITIALISATION
+    // ═══════════════════════════════════════
+    document.addEventListener('DOMContentLoaded', function() {
+      setupLongPress('logo-accueil');
+      setupLongPress('logo-carte');
+      routeOnLoad();
+    });
+  </script>
+</body>
+</html>
