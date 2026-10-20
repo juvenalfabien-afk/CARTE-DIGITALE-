@@ -7,6 +7,11 @@
 <meta name="description" content="PHENO&CO Barbershop Montpellier : rendez-vous, carte de fidélité, WhatsApp, itinéraire et horaires.">
 <meta name="theme-color" content="#0B1629">
 <link rel="apple-touch-icon" href="apple-touch-icon.png">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" href="icon-192.png">
+<meta name="apple-mobile-web-app-title" content="PHENO&amp;CO">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@600;700&family=Inter:wght@400;500;600;700&display=swap">
 <style>
@@ -25,6 +30,7 @@ h1{font-family:'Playfair Display',serif;font-weight:700;font-size:clamp(28px,7vw
 .btn svg{width:22px;height:22px;flex:none;stroke:currentColor;fill:none;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
 .btn.main{background:linear-gradient(135deg,#C9A84C,#E2C06A);color:#0B1629;border:0;font-weight:700;box-shadow:0 10px 26px rgba(201,168,76,.18)}
 .full{grid-column:1/-1}
+.newsite{border-color:var(--gold);color:var(--gold2)}.newsite span{display:flex;flex-direction:column;align-items:center;gap:2px}.newsite small{color:var(--muted);font-size:13px;font-weight:400}
 .try{grid-column:1/-1;display:flex;align-items:center;justify-content:center;gap:8px;margin:-2px 0 4px;padding:10px 12px;border-radius:14px;background:rgba(201,168,76,.08);color:var(--gold2);font-size:14px;text-decoration:none;text-align:center;line-height:1.35}
 .try b{font-weight:700}
 .box{margin-top:18px;border:1px solid var(--gold);border-radius:22px;padding:22px 18px}
@@ -56,7 +62,9 @@ h1{font-family:'Playfair Display',serif;font-weight:700;font-size:clamp(28px,7vw
       <a class="btn main full" href="https://phenoandco.fr/" rel="noopener">
         <svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M8 3v4M16 3v4M3 10h18"/></svg>Prendre rendez-vous
       </a>
-      <a class="try" href="https://phenoandco.netlify.app/" rel="noopener"><span>✨ <b>Nouveau :</b> essaie notre nouveau site de réservation, il remplacera bientôt l’ancien →</span></a>
+      <a class="btn full newsite" href="https://phenoandco.netlify.app/" rel="noopener">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3l2.4 5.6L20 9l-4.4 3.8L17 19l-5-3-5 3 1.4-6.2L4 9l5.6-.4z"/></svg><span>Nouveau site de réservation<small>Teste-le dès maintenant !</small></span>
+      </a>
 
       <a class="btn" href="https://phenoandcofidelite.netlify.app/" rel="noopener">
         <svg viewBox="0 0 24 24" aria-hidden="true"><rect x="2" y="5" width="20" height="14" rx="2"/><path d="M2 10h20"/></svg>Ma carte<br>de fidélité
