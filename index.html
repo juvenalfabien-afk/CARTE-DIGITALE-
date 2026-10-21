@@ -127,9 +127,9 @@ h1{font-family:'Playfair Display',serif;font-weight:700;font-size:clamp(28px,7vw
     var shown = false, show = function () { if (!shown) { shown = true; $('b-newsite').hidden = false; } };
     var fallback = setTimeout(show, 2500);
     if (!db) { show(); return; }
-    db.from('salons').select('settings').eq('slug', 'phenoandco').maybeSingle().then(function (r) {
+    db.rpc('hub_settings', { p_salon: 'phenoandco' }).then(function (r) {
       clearTimeout(fallback);
-      var st = r && r.data && r.data.settings;
+      var st = r && r.data;
       if (st && st.hub_new_site === false) { shown = true; $('b-newsite').hidden = true; } else show();
     }, function () { clearTimeout(fallback); show(); });
   })();
