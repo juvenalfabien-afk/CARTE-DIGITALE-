@@ -30,6 +30,7 @@ h1{font-family:'Playfair Display',serif;font-weight:700;font-size:clamp(28px,7vw
 .btn svg{width:22px;height:22px;flex:none;stroke:currentColor;fill:none;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
 .btn.main{background:linear-gradient(135deg,#C9A84C,#E2C06A);color:#0B1629;border:0;font-weight:700;box-shadow:0 10px 26px rgba(201,168,76,.18)}
 .full{grid-column:1/-1}
+.btn[hidden]{display:none}
 .newsite{border-color:var(--gold);color:var(--gold2)}.newsite span{display:flex;flex-direction:column;align-items:center;gap:2px}.newsite small{color:var(--muted);font-size:13px;font-weight:400}
 .try{grid-column:1/-1;display:flex;align-items:center;justify-content:center;gap:8px;margin:-2px 0 4px;padding:10px 12px;border-radius:14px;background:rgba(201,168,76,.08);color:var(--gold2);font-size:14px;text-decoration:none;text-align:center;line-height:1.35}
 .try b{font-weight:700}
@@ -62,7 +63,7 @@ h1{font-family:'Playfair Display',serif;font-weight:700;font-size:clamp(28px,7vw
       <a class="btn main full" href="https://phenoandco.com/" rel="noopener">
         <svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M8 3v4M16 3v4M3 10h18"/></svg>Prendre rendez-vous
       </a>
-      <a class="btn full newsite" href="https://phenoandco.netlify.app/" rel="noopener">
+      <a class="btn full newsite" id="b-newsite" href="https://phenoandco.netlify.app/" rel="noopener" hidden>
         <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3l2.4 5.6L20 9l-4.4 3.8L17 19l-5-3-5 3 1.4-6.2L4 9l5.6-.4z"/></svg><span>Nouveau site de réservation<small>Teste-le dès maintenant !</small></span>
       </a>
 
@@ -121,6 +122,17 @@ h1{font-family:'Playfair Display',serif;font-weight:700;font-size:clamp(28px,7vw
   var db = null;
   try { db = window.supabase.createClient('https://ebqxrrnezngpvewvlupr.supabase.co', 'sb_publishable_atOLxKckdSSkyMh8wu8R5A__-7ICqN_', { auth: { persistSession: false } }); } catch (e) { db = null; }
   function $(id) { return document.getElementById(id); }
+  // Bouton « Nouveau site » : affiché ou caché depuis le dashboard
+  (function () {
+    var shown = false, show = function () { if (!shown) { shown = true; $('b-newsite').hidden = false; } };
+    var fallback = setTimeout(show, 2500);
+    if (!db) { show(); return; }
+    db.from('salons').select('settings').eq('slug', 'phenoandco').maybeSingle().then(function (r) {
+      clearTimeout(fallback);
+      var st = r && r.data && r.data.settings;
+      if (st && st.hub_new_site === false) { shown = true; $('b-newsite').hidden = true; } else show();
+    }, function () { clearTimeout(fallback); show(); });
+  })();
   function open(id) { ['create', 'hours'].forEach(function (x) { $(x).hidden = x !== id; }); $(id).scrollIntoView({ behavior: 'smooth', block: 'start' }); }
   $('b-create').addEventListener('click', function () { open('create'); setTimeout(function () { $('c-first').focus(); }, 300); });
   $('b-hours').addEventListener('click', function () { open('hours'); });
