@@ -130,7 +130,7 @@ h1{font-family:'Playfair Display',serif;font-weight:700;font-size:clamp(28px,7vw
     db.rpc('hub_settings', { p_salon: 'phenoandco' }).then(function (r) {
       clearTimeout(fallback);
       var st = r && r.data;
-      if (st && (st.hub_new_site === false || st.booking_open === false)) { shown = true; $('b-newsite').hidden = true; } else show();
+      if (st && st.hub_new_site === false) { shown = true; $('b-newsite').hidden = true; } else show();
     }, function () { clearTimeout(fallback); show(); });
   })();
   function open(id) { ['create', 'hours'].forEach(function (x) { $(x).hidden = x !== id; }); $(id).scrollIntoView({ behavior: 'smooth', block: 'start' }); }
@@ -162,7 +162,7 @@ h1{font-family:'Playfair Display',serif;font-weight:700;font-size:clamp(28px,7vw
 // Mise a jour automatique : a chaque ouverture ou retour sur l'appli, le hub verifie s'il existe
 // une nouvelle version publiee et se recharge tout seul. Changer HUB_VERSION a chaque modification.
 (function () {
-  var HUB_VERSION = '2026-11-01-a';
+  var HUB_VERSION = '2026-11-01-b';
   var busy = false, last = 0;
   function check() {
     var now = Date.now();
