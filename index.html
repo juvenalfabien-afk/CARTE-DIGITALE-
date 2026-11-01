@@ -122,16 +122,25 @@ h1{font-family:'Playfair Display',serif;font-weight:700;font-size:clamp(28px,7vw
   var db = null;
   try { db = window.supabase.createClient('https://ebqxrrnezngpvewvlupr.supabase.co', 'sb_publishable_atOLxKckdSSkyMh8wu8R5A__-7ICqN_', { auth: { persistSession: false } }); } catch (e) { db = null; }
   function $(id) { return document.getElementById(id); }
-  // Bouton « Nouveau site » : affiché ou caché depuis le dashboard
+  // Bouton « Nouveau site » : affiché ou caché depuis le dashboard.
+  // Revérifié à chaque retour sur l'app (l'app installée reste souvent ouverte en arrière-plan) et chaque minute.
   (function () {
-    var shown = false, show = function () { if (!shown) { shown = true; $('b-newsite').hidden = false; } };
-    var fallback = setTimeout(show, 2500);
-    if (!db) { show(); return; }
-    db.rpc('hub_settings', { p_salon: 'phenoandco' }).then(function (r) {
-      clearTimeout(fallback);
-      var st = r && r.data;
-      if (st && st.hub_new_site === false) { shown = true; $('b-newsite').hidden = true; } else show();
-    }, function () { clearTimeout(fallback); show(); });
+    var b = $('b-newsite'), got = false;
+    var fallback = setTimeout(function () { if (!got) b.hidden = false; }, 2500);
+    function check() {
+      if (!db) { b.hidden = false; return; }
+      db.rpc('hub_settings', { p_salon: 'phenoandco' }).then(function (r) {
+        var st = r && r.data;
+        if (!st) return;
+        got = true; clearTimeout(fallback);
+        b.hidden = st.hub_new_site === false;
+      }, function () {});
+    }
+    check();
+    document.addEventListener('visibilitychange', function () { if (!document.hidden) check(); });
+    window.addEventListener('pageshow', function (e) { if (e.persisted) check(); });
+    window.addEventListener('focus', check);
+    setInterval(function () { if (!document.hidden) check(); }, 60000);
   })();
   function open(id) { ['create', 'hours'].forEach(function (x) { $(x).hidden = x !== id; }); $(id).scrollIntoView({ behavior: 'smooth', block: 'start' }); }
   $('b-create').addEventListener('click', function () { open('create'); setTimeout(function () { $('c-first').focus(); }, 300); });
@@ -162,7 +171,7 @@ h1{font-family:'Playfair Display',serif;font-weight:700;font-size:clamp(28px,7vw
 // Mise a jour automatique : a chaque ouverture ou retour sur l'appli, le hub verifie s'il existe
 // une nouvelle version publiee et se recharge tout seul. Changer HUB_VERSION a chaque modification.
 (function () {
-  var HUB_VERSION = '2026-11-01-b';
+  var HUB_VERSION = '2026-11-01-c';
   var busy = false, last = 0;
   function check() {
     var now = Date.now();
