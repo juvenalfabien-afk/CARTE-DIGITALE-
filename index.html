@@ -158,5 +158,26 @@ h1{font-family:'Playfair Display',serif;font-weight:700;font-size:clamp(28px,7vw
   });
 })();
 </script>
+<script>
+// Mise a jour automatique : a chaque ouverture ou retour sur l'appli, le hub verifie s'il existe
+// une nouvelle version publiee et se recharge tout seul. Changer HUB_VERSION a chaque modification.
+(function () {
+  var HUB_VERSION = '2026-11-01-a';
+  var busy = false, last = 0;
+  function check() {
+    var now = Date.now();
+    if (busy || now - last < 20000) return;
+    busy = true; last = now;
+    fetch(location.pathname + '?check=' + now, { cache: 'no-store' }).then(function (r) { return r.ok ? r.text() : ''; }).then(function (t) {
+      busy = false;
+      var m = t && t.match(/HUB_VERSION = '([^']+)'/);
+      if (m && m[1] !== HUB_VERSION) location.replace(location.pathname + '?v=' + encodeURIComponent(m[1]) + location.hash);
+    }, function () { busy = false; });
+  }
+  check();
+  document.addEventListener('visibilitychange', function () { if (!document.hidden) check(); });
+  window.addEventListener('pageshow', function (e) { if (e.persisted) check(); });
+})();
+</script>
 </body>
 </html>
