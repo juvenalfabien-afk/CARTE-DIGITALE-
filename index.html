@@ -51,6 +51,10 @@ h1{font-family:'Playfair Display',serif;font-weight:700;font-size:clamp(28px,7vw
 .check{display:flex;gap:10px;align-items:flex-start;margin-top:14px;font-size:14px;color:var(--muted);line-height:1.45}
 .check input{width:20px;height:20px;accent-color:var(--gold);margin-top:1px;flex:none}
 .hint{display:block;font-size:13px;color:var(--muted);margin-top:6px;line-height:1.4}
+.dot{display:inline-grid;place-items:center;min-width:22px;height:22px;padding:0 6px;border-radius:999px;background:#E0605A;color:#fff;font-size:12px;font-weight:700;margin-left:4px}
+.notif{grid-column:1/-1;border-color:var(--gold);color:var(--gold2)}
+.okbox{margin-top:14px;text-align:center;display:grid;gap:12px}
+.okbox p{margin:0;color:var(--muted);font-size:14px;line-height:1.5}
 .foot{text-align:center;color:var(--muted);font-size:12px;margin-top:18px}
 @media (min-width:700px){.wrap{max-width:620px}.panel{padding:44px 40px 34px}.logo{width:190px;height:190px}}
 @media (max-width:360px){.grid{grid-template-columns:1fr}}
@@ -79,8 +83,11 @@ h1{font-family:'Playfair Display',serif;font-weight:700;font-size:clamp(28px,7vw
       </button>
 
       <a class="btn full" href="https://phenoandcofidelite.netlify.app/#msg" rel="noopener">
-        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 5h16v11H8l-4 4z"/><path d="M8 9h8M8 12h5"/></svg>Mes messages
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 5h16v11H8l-4 4z"/><path d="M8 9h8M8 12h5"/></svg>Mes messages<span class="dot" id="msg-dot" hidden></span>
       </a>
+      <button class="btn notif" type="button" id="b-notif" hidden>
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9"/><path d="M10.3 21a1.94 1.94 0 0 0 3.4 0"/></svg>Activer les notifications
+      </button>
       <a class="btn" href="https://wa.me/33769432605" target="_blank" rel="noopener">
         <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M21 12a9 9 0 0 1-13.4 7.8L3 21l1.3-4.4A9 9 0 1 1 21 12z"/></svg>WhatsApp
       </a>
@@ -110,8 +117,34 @@ h1{font-family:'Playfair Display',serif;font-weight:700;font-size:clamp(28px,7vw
         <p class="err" id="c-err" role="alert"></p>
         <button class="btn main" type="submit" style="width:100%;min-height:58px">Créer ma carte</button>
       </form>
+      <div class="okbox" id="c-done" hidden>
+        <p style="color:var(--cream);font-size:17px"><b>Ta carte est créée ! 🎉</b></p>
+        <p>Active les notifications pour être prévenu en cas de retard ou de fermeture.</p>
+        <button class="btn main" type="button" id="b-done-notif" style="width:100%;min-height:58px">🔔 Activer les notifications</button>
+        <p class="err" id="c-err2" role="alert"></p>
+        <a class="btn" id="b-done-card" href="https://phenoandcofidelite.netlify.app/" style="width:100%;min-height:58px">Ouvrir ma carte</a>
+      </div>
     </section>
 
+    <section class="box" id="notif" hidden aria-labelledby="notif-title">
+      <button class="close" type="button" data-close="notif">Fermer ✕</button>
+      <h2 id="notif-title">Notifications</h2>
+      <p class="sub" style="margin:0" id="n-text">Sois prévenu sur ton téléphone quand Pheno t'envoie un message (retard, fermeture, rendez-vous).</p>
+      <form id="f-notif" novalidate>
+        <div class="field"><label for="n-phone">Téléphone</label><input id="n-phone" type="tel" inputmode="tel" autocomplete="tel" placeholder="06 12 34 56 78"></div>
+        <div class="field"><label for="n-pin">Code secret de ta carte (4 chiffres)</label><input id="n-pin" class="pin" type="password" inputmode="numeric" pattern="[0-9]*" maxlength="4" autocomplete="current-password" placeholder="••••"></div>
+        <p class="err" id="n-err" role="alert"></p>
+        <button class="btn main" type="submit" style="width:100%;min-height:58px">Continuer</button>
+      </form>
+      <div class="okbox" id="n-allow" hidden>
+        <p>Dernière étape : ton téléphone va te demander l'autorisation. Réponds « Autoriser ».</p>
+        <button class="btn main" type="button" id="b-allow" style="width:100%;min-height:58px">Autoriser les notifications</button>
+        <p class="err" id="n-err2" role="alert"></p>
+      </div>
+      <div class="okbox" id="n-ios" hidden>
+        <p>Sur iPhone, les notifications marchent seulement avec l'appli installée. Appuie sur le bouton <b>Partager</b> (le carré avec une flèche vers le haut) en bas de Safari, puis sur <b>« Sur l'écran d'accueil »</b>. Ouvre ensuite PHENO&amp;CO depuis l'icône et reviens ici.</p>
+      </div>
+    </section>
     <section class="box" id="hours" hidden aria-labelledby="hours-title">
       <button class="close" type="button" data-close="hours">Fermer ✕</button>
       <h2 id="hours-title">Horaires &amp; infos</h2>
@@ -153,10 +186,88 @@ h1{font-family:'Playfair Display',serif;font-weight:700;font-size:clamp(28px,7vw
     window.addEventListener('focus', check);
     setInterval(function () { if (!document.hidden) check(); }, 60000);
   })();
-  function open(id) { ['create', 'hours'].forEach(function (x) { $(x).hidden = x !== id; }); $(id).scrollIntoView({ behavior: 'smooth', block: 'start' }); }
+  function open(id) { ['create', 'hours', 'notif'].forEach(function (x) { $(x).hidden = x !== id; }); $(id).scrollIntoView({ behavior: 'smooth', block: 'start' }); }
   $('b-create').addEventListener('click', function () { open('create'); setTimeout(function () { $('c-first').focus(); }, 300); });
   $('b-hours').addEventListener('click', function () { open('hours'); });
   document.querySelectorAll('[data-close]').forEach(function (b) { b.addEventListener('click', function () { $(b.getAttribute('data-close')).hidden = true; }); });
+  /* ===== Notifications de la messagerie + pastille des messages ===== */
+  var VAPID = 'BIFiQaLQPH1iOePHV7fOXDPQ9NGRxEfcRwmkzr6pvLXLyBg3Ks5A2c_rFV71dUaSfj-PPnPJvS1qUtxkJWFtxs8';
+  var KEY = 'pnc_hub_key';
+  function getKey() { try { var k = localStorage.getItem(KEY); return k && /^[0-9a-f]{64}$/.test(k) ? k : null; } catch (e) { return null; } }
+  function setKey(k) { try { if (k) localStorage.setItem(KEY, k); else localStorage.removeItem(KEY); } catch (e) {} }
+  function isIOS() { return /iphone|ipad|ipod/i.test(navigator.userAgent) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1); }
+  function standalone() { try { return (window.matchMedia && matchMedia('(display-mode: standalone)').matches) || navigator.standalone === true; } catch (e) { return false; } }
+  function pushSupported() { return 'serviceWorker' in navigator && 'PushManager' in window && 'Notification' in window; }
+  function b64(u) { var p = '='.repeat((4 - u.length % 4) % 4), s = atob((u + p).replace(/-/g, '+').replace(/_/g, '/')), a = new Uint8Array(s.length); for (var i = 0; i < s.length; i++) a[i] = s.charCodeAt(i); return a; }
+  var swReg = null;
+  if ('serviceWorker' in navigator) navigator.serviceWorker.register('sw.js').then(function (r) { swReg = r; refreshNotifBtn(); }, function () {});
+  function refreshNotifBtn() {
+    var b = $('b-notif');
+    if (pushSupported() && Notification.permission === 'granted' && getKey()) { b.hidden = true; return; }
+    b.hidden = !(pushSupported() || isIOS());
+  }
+  async function subscribe(errEl) {
+    errEl.textContent = '';
+    if (!pushSupported()) { errEl.textContent = 'Ce téléphone ne permet pas les notifications ici.'; return false; }
+    try {
+      var perm = await Notification.requestPermission();
+      if (perm !== 'granted') { errEl.textContent = 'Les notifications sont refusées. Tu peux les réactiver dans les réglages de ton téléphone, rubrique Notifications.'; return false; }
+      var reg = swReg || await navigator.serviceWorker.ready;
+      var sub = await reg.pushManager.getSubscription() || await reg.pushManager.subscribe({ userVisibleOnly: true, applicationServerKey: b64(VAPID) });
+      var j = sub.toJSON();
+      var r = await db.rpc('card_push_save', { p_key: getKey(), p_endpoint: j.endpoint, p_p256dh: j.keys.p256dh, p_auth: j.keys.auth });
+      if (!r.data || !r.data.ok) { if (r.data && r.data.error === 'session') setKey(null); errEl.textContent = 'Activation impossible. Réessaie.'; return false; }
+      refreshNotifBtn(); return true;
+    } catch (e) { errEl.textContent = 'Activation impossible sur ce téléphone pour le moment.'; return false; }
+  }
+  function openNotif() {
+    open('notif');
+    $('f-notif').hidden = true; $('n-allow').hidden = true; $('n-ios').hidden = true; $('n-err').textContent = '';
+    if (!pushSupported()) { $('n-ios').hidden = !isIOS(); if (!isIOS()) { $('n-text').textContent = 'Ce navigateur ne permet pas les notifications.'; } return; }
+    if (getKey()) $('n-allow').hidden = false; else $('f-notif').hidden = false;
+  }
+  $('b-notif').addEventListener('click', openNotif);
+  $('f-notif').addEventListener('submit', function (e) {
+    e.preventDefault();
+    var err = $('n-err'), phone = $('n-phone').value.trim(), pin = $('n-pin').value;
+    err.textContent = '';
+    if (phone.replace(/[^0-9]/g, '').length < 9) { err.textContent = 'Indique ton numéro de téléphone.'; return; }
+    if (!/^[0-9]{4}$/.test(pin)) { err.textContent = 'Indique les 4 chiffres de ton code secret.'; return; }
+    var btn = this.querySelector('button[type=submit]'); btn.disabled = true;
+    db.rpc('card_login', { p_salon: 'phenoandco', p_phone: phone, p_pin: pin, p_device: 'appli PHENO&CO' }).then(function (r) {
+      btn.disabled = false; var d = (r && r.data) || {};
+      if (d.ok && d.key) { setKey(d.key); $('f-notif').hidden = true; $('n-allow').hidden = false; loadBadge(); return; }
+      if (d.error === 'inconnu') err.innerHTML = 'Ce numéro n’a pas encore de carte. <button type="button" class="close" style="float:none" id="n-create">Créer ma carte</button>';
+      else if (d.need_setup && d.mailed) err.textContent = 'Tu n’as pas encore de code : on t’a envoyé un e-mail à ' + d.hint + ' pour le choisir. Reviens ensuite ici.';
+      else if (d.need_setup) err.textContent = 'Tu n’as pas encore de code : ouvre ta carte de fidélité pour le choisir, puis reviens ici.';
+      else if (d.error === 'bloque') err.textContent = 'Trop d’essais : réessaie plus tard.';
+      else if (d.error === 'code') err.textContent = 'Code incorrect.' + (d.left > 0 ? ' Encore ' + d.left + ' essai' + (d.left > 1 ? 's' : '') + '.' : '');
+      else err.textContent = 'Impossible pour le moment. Réessaie.';
+      var nc = document.getElementById('n-create'); if (nc) nc.onclick = function () { open('create'); };
+    }, function () { btn.disabled = false; err.textContent = 'Pas de connexion internet. Réessaie.'; });
+  });
+  $('b-allow').addEventListener('click', async function () {
+    this.disabled = true; var ok = await subscribe($('n-err2')); this.disabled = false;
+    if (ok) { $('n-allow').innerHTML = '<p style="color:var(--cream)"><b>C’est activé ✅</b></p><p>Tu seras prévenu dès que Pheno t’envoie un message.</p>'; }
+  });
+  $('b-done-notif').addEventListener('click', async function () {
+    this.disabled = true; var ok = await subscribe($('c-err2'));
+    if (ok) { this.textContent = 'Notifications activées ✅'; } else { this.disabled = false; }
+  });
+  function loadBadge() {
+    var k = getKey(); if (!k || !db) return;
+    db.rpc('card_unread', { p_key: k }).then(function (r) {
+      var d = r && r.data; var dot = $('msg-dot');
+      if (!d || !d.ok) { if (d && d.ok === false) setKey(null); dot.hidden = true; refreshNotifBtn(); return; }
+      dot.hidden = !d.unread; dot.textContent = d.unread > 9 ? '9+' : String(d.unread);
+    }, function () {});
+  }
+  loadBadge(); refreshNotifBtn();
+  document.addEventListener('visibilitychange', function () { if (!document.hidden) loadBadge(); });
+  setInterval(function () { if (!document.hidden) loadBadge(); }, 60000);
+  // Ouverture depuis une notification : direction la messagerie de la carte
+  if (/msg/.test(location.hash)) { try { history.replaceState(null, '', location.pathname); } catch (e) {} location.href = CARD + '#msg'; }
+
   $('f-create').addEventListener('submit', function (e) {
     e.preventDefault();
     var err = $('c-err'), first = $('c-first').value.trim(), last = $('c-last').value.trim(), phone = $('c-phone').value.trim();
@@ -171,11 +282,16 @@ h1{font-family:'Playfair Display',serif;font-weight:700;font-size:clamp(28px,7vw
     if (!db) { err.textContent = 'Connexion impossible. Réessaie dans un instant.'; return; }
     var btn = this.querySelector('button[type=submit]'); btn.disabled = true; btn.textContent = 'Création…';
     db.rpc('card_signup', { p_salon: 'phenoandco', p_phone: phone, p_first: first, p_last: last || null, p_email: email,
-      p_pin: p1, p_consent: $('c-consent').checked, p_device: null, p_handoff: true }).then(function (r) {
+      p_pin: p1, p_consent: $('c-consent').checked, p_device: 'appli PHENO&CO', p_handoff: false }).then(function (r) {
       var d = r && r.data;
-      if (d && d.ok && d.link) {
-        btn.textContent = 'Carte créée ! Ouverture…';
-        location.href = CARD + '#m=' + d.link + '&hub';
+      if (d && d.ok && d.key) {
+        setKey(d.key);
+        $('f-create').hidden = true; $('c-done').hidden = false;
+        // Lien d'un instant pour ouvrir la carte sans retaper le code
+        db.rpc('card_handoff', { p_key: d.key }).then(function (h) {
+          if (h && h.data && h.data.ok) $('b-done-card').href = CARD + '#m=' + h.data.link + '&hub';
+        }, function () {});
+        if (!pushSupported()) $('b-done-notif').hidden = true;
         return;
       }
       btn.disabled = false; btn.textContent = 'Créer ma carte';
@@ -191,7 +307,7 @@ h1{font-family:'Playfair Display',serif;font-weight:700;font-size:clamp(28px,7vw
 // Mise a jour automatique : a chaque ouverture ou retour sur l'appli, le hub verifie s'il existe
 // une nouvelle version publiee et se recharge tout seul. Changer HUB_VERSION a chaque modification.
 (function () {
-  var HUB_VERSION = '2026-11-05-msg1';
+  var HUB_VERSION = '2026-11-05-notif1';
   var busy = false, last = 0;
   function check() {
     var now = Date.now();
