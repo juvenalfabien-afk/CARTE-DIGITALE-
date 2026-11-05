@@ -47,6 +47,10 @@ h1{font-family:'Playfair Display',serif;font-weight:700;font-size:clamp(28px,7vw
 .hours span:last-child{color:var(--gold2);font-weight:600;text-align:right}
 .info{color:var(--muted);font-size:14px;line-height:1.6;margin-top:12px}
 .info a{color:var(--gold2)}
+.pin{letter-spacing:.6em;text-align:center;font-size:22px!important}
+.check{display:flex;gap:10px;align-items:flex-start;margin-top:14px;font-size:14px;color:var(--muted);line-height:1.45}
+.check input{width:20px;height:20px;accent-color:var(--gold);margin-top:1px;flex:none}
+.hint{display:block;font-size:13px;color:var(--muted);margin-top:6px;line-height:1.4}
 .foot{text-align:center;color:var(--muted);font-size:12px;margin-top:18px}
 @media (min-width:700px){.wrap{max-width:620px}.panel{padding:44px 40px 34px}.logo{width:190px;height:190px}}
 @media (max-width:360px){.grid{grid-template-columns:1fr}}
@@ -74,6 +78,9 @@ h1{font-family:'Playfair Display',serif;font-weight:700;font-size:clamp(28px,7vw
         <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 8v8M8 12h8"/></svg>Créer ma carte<br>de fidélité
       </button>
 
+      <a class="btn full" href="https://phenoandcofidelite.netlify.app/#msg" rel="noopener">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 5h16v11H8l-4 4z"/><path d="M8 9h8M8 12h5"/></svg>Mes messages
+      </a>
       <a class="btn" href="https://wa.me/33769432605" target="_blank" rel="noopener">
         <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M21 12a9 9 0 0 1-13.4 7.8L3 21l1.3-4.4A9 9 0 1 1 21 12z"/></svg>WhatsApp
       </a>
@@ -96,6 +103,10 @@ h1{font-family:'Playfair Display',serif;font-weight:700;font-size:clamp(28px,7vw
         <div class="field"><label for="c-first">Prénom</label><input id="c-first" autocomplete="given-name" required></div>
         <div class="field"><label for="c-last">Nom (facultatif)</label><input id="c-last" autocomplete="family-name"></div>
         <div class="field"><label for="c-phone">Téléphone</label><input id="c-phone" type="tel" inputmode="tel" autocomplete="tel" placeholder="06 12 34 56 78" required></div>
+        <div class="field"><label for="c-email">E-mail</label><input id="c-email" type="email" inputmode="email" autocomplete="email" placeholder="prenom@exemple.fr" required><span class="hint">Elle sert si tu oublies ton code : tu le refais toi-même en un clic.</span></div>
+        <div class="field"><label for="c-pin1">Choisis ton code secret (4 chiffres)</label><input id="c-pin1" class="pin" type="password" inputmode="numeric" pattern="[0-9]*" maxlength="4" autocomplete="new-password" placeholder="••••"></div>
+        <div class="field"><label for="c-pin2">Retape ton code</label><input id="c-pin2" class="pin" type="password" inputmode="numeric" pattern="[0-9]*" maxlength="4" autocomplete="new-password" placeholder="••••"><span class="hint">Il protège ta carte et tes messages. Pas de 0000 ni de 1234.</span></div>
+        <label class="check"><input type="checkbox" id="c-consent" checked> J’accepte de recevoir les annonces de PHENO&amp;CO (fermetures, nouveautés). Les messages sur mes rendez-vous arrivent toujours.</label>
         <p class="err" id="c-err" role="alert"></p>
         <button class="btn main" type="submit" style="width:100%;min-height:58px">Créer ma carte</button>
       </form>
@@ -149,20 +160,29 @@ h1{font-family:'Playfair Display',serif;font-weight:700;font-size:clamp(28px,7vw
   $('f-create').addEventListener('submit', function (e) {
     e.preventDefault();
     var err = $('c-err'), first = $('c-first').value.trim(), last = $('c-last').value.trim(), phone = $('c-phone').value.trim();
+    var email = $('c-email').value.trim(), p1 = $('c-pin1').value, p2 = $('c-pin2').value;
     err.textContent = '';
     if (first.length < 2) { err.textContent = 'Indique ton prénom.'; $('c-first').focus(); return; }
     if (phone.replace(/[^0-9]/g, '').length < 9) { err.textContent = 'Indique ton numéro de téléphone.'; $('c-phone').focus(); return; }
+    if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email)) { err.textContent = 'Indique une adresse e-mail valide.'; $('c-email').focus(); return; }
+    if (!/^[0-9]{4}$/.test(p1)) { err.textContent = 'Ton code doit faire exactement 4 chiffres.'; $('c-pin1').focus(); return; }
+    if (['0000','1111','2222','3333','4444','5555','6666','7777','8888','9999','1234','4321'].indexOf(p1) >= 0) { err.textContent = 'Ce code est trop facile à deviner. Choisis-en un autre.'; $('c-pin1').focus(); return; }
+    if (p1 !== p2) { err.textContent = 'Les deux codes ne sont pas pareils. Retape-les.'; $('c-pin2').focus(); return; }
     if (!db) { err.textContent = 'Connexion impossible. Réessaie dans un instant.'; return; }
     var btn = this.querySelector('button[type=submit]'); btn.disabled = true; btn.textContent = 'Création…';
-    db.rpc('card_create', { p_salon: 'phenoandco', p_phone: phone, p_first: first, p_last: last || null }).then(function (r) {
+    db.rpc('card_signup', { p_salon: 'phenoandco', p_phone: phone, p_first: first, p_last: last || null, p_email: email,
+      p_pin: p1, p_consent: $('c-consent').checked, p_device: null, p_handoff: true }).then(function (r) {
       var d = r && r.data;
-      if (d && d.ok && d.token) {
-        btn.textContent = d.existing ? 'Tu as déjà une carte, on l’ouvre…' : 'Carte créée ! Ouverture…';
-        location.href = CARD + '#t=' + d.token;
+      if (d && d.ok && d.link) {
+        btn.textContent = 'Carte créée ! Ouverture…';
+        location.href = CARD + '#m=' + d.link + '&hub';
         return;
       }
       btn.disabled = false; btn.textContent = 'Créer ma carte';
-      err.textContent = d && d.error === 'phone' ? 'Ce numéro ne semble pas valide (ex. 06 12 34 56 78).' : 'La création n’a pas fonctionné. Réessaie.';
+      var m = { phone: 'Ce numéro ne semble pas valide (ex. 06 12 34 56 78).', email: 'Cette adresse e-mail ne semble pas valide.',
+                pin: 'Ce code est trop facile à deviner. Choisis-en un autre.', name: 'Indique ton prénom.' };
+      if (d && d.error === 'existe') { err.innerHTML = 'Ce numéro a déjà une carte. <a href="' + CARD + '#carte" style="color:#E2C06A">Ouvrir ma carte</a>'; return; }
+      err.textContent = (d && m[d.error]) || 'La création n’a pas fonctionné. Réessaie.';
     }, function () { btn.disabled = false; btn.textContent = 'Créer ma carte'; err.textContent = 'Pas de connexion internet. Réessaie.'; });
   });
 })();
@@ -171,7 +191,7 @@ h1{font-family:'Playfair Display',serif;font-weight:700;font-size:clamp(28px,7vw
 // Mise a jour automatique : a chaque ouverture ou retour sur l'appli, le hub verifie s'il existe
 // une nouvelle version publiee et se recharge tout seul. Changer HUB_VERSION a chaque modification.
 (function () {
-  var HUB_VERSION = '2026-11-01-c';
+  var HUB_VERSION = '2026-11-05-msg1';
   var busy = false, last = 0;
   function check() {
     var now = Date.now();
