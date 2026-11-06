@@ -110,9 +110,7 @@ h1{font-family:'Playfair Display',serif;font-weight:700;font-size:clamp(28px,7vw
         <div class="field"><label for="c-first">Prénom</label><input id="c-first" autocomplete="given-name" required></div>
         <div class="field"><label for="c-last">Nom (facultatif)</label><input id="c-last" autocomplete="family-name"></div>
         <div class="field"><label for="c-phone">Téléphone</label><input id="c-phone" type="tel" inputmode="tel" autocomplete="tel" placeholder="06 12 34 56 78" required></div>
-        <div class="field"><label for="c-email">E-mail</label><input id="c-email" type="email" inputmode="email" autocomplete="email" placeholder="prenom@exemple.fr" required><span class="hint">Elle sert si tu oublies ton code : tu le refais toi-même en un clic.</span></div>
-        <div class="field"><label for="c-pin1">Choisis ton code secret (4 chiffres)</label><input id="c-pin1" class="pin" type="password" inputmode="numeric" pattern="[0-9]*" maxlength="4" autocomplete="new-password" placeholder="••••"></div>
-        <div class="field"><label for="c-pin2">Retape ton code</label><input id="c-pin2" class="pin" type="password" inputmode="numeric" pattern="[0-9]*" maxlength="4" autocomplete="new-password" placeholder="••••"><span class="hint">Il protège ta carte et tes messages. Pas de 0000 ni de 1234.</span></div>
+        <div class="field"><label for="c-email">E-mail</label><input id="c-email" type="email" inputmode="email" autocomplete="email" placeholder="prenom@exemple.fr" required><span class="hint">Pour recevoir la confirmation de tes rendez-vous.</span></div>
         <label class="check"><input type="checkbox" id="c-consent" checked> J’accepte de recevoir les annonces de PHENO&amp;CO (fermetures, nouveautés). Les messages sur mes rendez-vous arrivent toujours.</label>
         <p class="err" id="c-err" role="alert"></p>
         <button class="btn main" type="submit" style="width:100%;min-height:58px">Créer ma carte</button>
@@ -132,7 +130,6 @@ h1{font-family:'Playfair Display',serif;font-weight:700;font-size:clamp(28px,7vw
       <p class="sub" style="margin:0" id="n-text">Sois prévenu sur ton téléphone quand Pheno t'envoie un message (retard, fermeture, rendez-vous).</p>
       <form id="f-notif" novalidate>
         <div class="field"><label for="n-phone">Téléphone</label><input id="n-phone" type="tel" inputmode="tel" autocomplete="tel" placeholder="06 12 34 56 78"></div>
-        <div class="field"><label for="n-pin">Code secret de ta carte (4 chiffres)</label><input id="n-pin" class="pin" type="password" inputmode="numeric" pattern="[0-9]*" maxlength="4" autocomplete="current-password" placeholder="••••"></div>
         <p class="err" id="n-err" role="alert"></p>
         <button class="btn main" type="submit" style="width:100%;min-height:58px">Continuer</button>
       </form>
@@ -229,12 +226,11 @@ h1{font-family:'Playfair Display',serif;font-weight:700;font-size:clamp(28px,7vw
   $('b-notif').addEventListener('click', openNotif);
   $('f-notif').addEventListener('submit', function (e) {
     e.preventDefault();
-    var err = $('n-err'), phone = $('n-phone').value.trim(), pin = $('n-pin').value;
+    var err = $('n-err'), phone = $('n-phone').value.trim();
     err.textContent = '';
     if (phone.replace(/[^0-9]/g, '').length < 9) { err.textContent = 'Indique ton numéro de téléphone.'; return; }
-    if (!/^[0-9]{4}$/.test(pin)) { err.textContent = 'Indique les 4 chiffres de ton code secret.'; return; }
     var btn = this.querySelector('button[type=submit]'); btn.disabled = true;
-    db.rpc('card_login', { p_salon: 'phenoandco', p_phone: phone, p_pin: pin, p_device: 'appli PHENO&CO' }).then(function (r) {
+    db.rpc('card_login', { p_salon: 'phenoandco', p_phone: phone, p_pin: null, p_device: 'appli PHENO&CO' }).then(function (r) {
       btn.disabled = false; var d = (r && r.data) || {};
       if (d.ok && d.key) { setKey(d.key); $('f-notif').hidden = true; $('n-allow').hidden = false; loadBadge(); return; }
       if (d.error === 'inconnu') err.innerHTML = 'Ce numéro n’a pas encore de carte. <button type="button" class="close" style="float:none" id="n-create">Créer ma carte</button>';
@@ -271,18 +267,15 @@ h1{font-family:'Playfair Display',serif;font-weight:700;font-size:clamp(28px,7vw
   $('f-create').addEventListener('submit', function (e) {
     e.preventDefault();
     var err = $('c-err'), first = $('c-first').value.trim(), last = $('c-last').value.trim(), phone = $('c-phone').value.trim();
-    var email = $('c-email').value.trim(), p1 = $('c-pin1').value, p2 = $('c-pin2').value;
+    var email = $('c-email').value.trim();
     err.textContent = '';
     if (first.length < 2) { err.textContent = 'Indique ton prénom.'; $('c-first').focus(); return; }
     if (phone.replace(/[^0-9]/g, '').length < 9) { err.textContent = 'Indique ton numéro de téléphone.'; $('c-phone').focus(); return; }
     if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email)) { err.textContent = 'Indique une adresse e-mail valide.'; $('c-email').focus(); return; }
-    if (!/^[0-9]{4}$/.test(p1)) { err.textContent = 'Ton code doit faire exactement 4 chiffres.'; $('c-pin1').focus(); return; }
-    if (['0000','1111','2222','3333','4444','5555','6666','7777','8888','9999','1234','4321'].indexOf(p1) >= 0) { err.textContent = 'Ce code est trop facile à deviner. Choisis-en un autre.'; $('c-pin1').focus(); return; }
-    if (p1 !== p2) { err.textContent = 'Les deux codes ne sont pas pareils. Retape-les.'; $('c-pin2').focus(); return; }
     if (!db) { err.textContent = 'Connexion impossible. Réessaie dans un instant.'; return; }
     var btn = this.querySelector('button[type=submit]'); btn.disabled = true; btn.textContent = 'Création…';
     db.rpc('card_signup', { p_salon: 'phenoandco', p_phone: phone, p_first: first, p_last: last || null, p_email: email,
-      p_pin: p1, p_consent: $('c-consent').checked, p_device: 'appli PHENO&CO', p_handoff: false }).then(function (r) {
+      p_pin: null, p_consent: $('c-consent').checked, p_device: 'appli PHENO&CO', p_handoff: false }).then(function (r) {
       var d = r && r.data;
       if (d && d.ok && d.key) {
         setKey(d.key);
@@ -307,7 +300,7 @@ h1{font-family:'Playfair Display',serif;font-weight:700;font-size:clamp(28px,7vw
 // Mise a jour automatique : a chaque ouverture ou retour sur l'appli, le hub verifie s'il existe
 // une nouvelle version publiee et se recharge tout seul. Changer HUB_VERSION a chaque modification.
 (function () {
-  var HUB_VERSION = '2026-11-05-notif1';
+  var HUB_VERSION = '2026-11-06-sanscode1';
   var busy = false, last = 0;
   function check() {
     var now = Date.now();
