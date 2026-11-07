@@ -51,7 +51,7 @@ h1{font-family:'Playfair Display',serif;font-weight:700;font-size:clamp(28px,7vw
 .check{display:flex;gap:10px;align-items:flex-start;margin-top:14px;font-size:14px;color:var(--muted);line-height:1.45}
 .check input{width:20px;height:20px;accent-color:var(--gold);margin-top:1px;flex:none}
 .hint{display:block;font-size:13px;color:var(--muted);margin-top:6px;line-height:1.4}
-.dot{display:inline-grid;place-items:center;min-width:22px;height:22px;padding:0 6px;border-radius:999px;background:#E0605A;color:#fff;font-size:12px;font-weight:700;margin-left:4px}
+.dot{display:inline-grid;place-items:center;min-width:22px;height:22px;padding:0 6px;border-radius:999px;background:linear-gradient(90deg,#cbaa4f,#dfbd67);color:#0B1629;font-size:12px;font-weight:700;margin-left:4px}
 .notif{grid-column:1/-1;border-color:var(--gold);color:var(--gold2)}
 .okbox{margin-top:14px;text-align:center;display:grid;gap:12px}
 .okbox p{margin:0;color:var(--muted);font-size:14px;line-height:1.5}
@@ -256,6 +256,8 @@ h1{font-family:'Playfair Display',serif;font-weight:700;font-size:clamp(28px,7vw
       var d = r && r.data; var dot = $('msg-dot');
       if (!d || !d.ok) { if (d && d.ok === false) setKey(null); dot.hidden = true; refreshNotifBtn(); return; }
       dot.hidden = !d.unread; dot.textContent = d.unread > 9 ? '9+' : String(d.unread);
+      // Pastille sur l'icône de l'appli (affichée par le téléphone)
+      try { if (d.unread && navigator.setAppBadge) navigator.setAppBadge(d.unread); else if (navigator.clearAppBadge) navigator.clearAppBadge(); } catch (e) {}
     }, function () {});
   }
   loadBadge(); refreshNotifBtn();
@@ -300,7 +302,7 @@ h1{font-family:'Playfair Display',serif;font-weight:700;font-size:clamp(28px,7vw
 // Mise a jour automatique : a chaque ouverture ou retour sur l'appli, le hub verifie s'il existe
 // une nouvelle version publiee et se recharge tout seul. Changer HUB_VERSION a chaque modification.
 (function () {
-  var HUB_VERSION = '2026-11-06-sanscode1';
+  var HUB_VERSION = '2026-11-07-badge1';
   var busy = false, last = 0;
   function check() {
     var now = Date.now();
