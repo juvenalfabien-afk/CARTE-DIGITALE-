@@ -54,7 +54,12 @@ h1{font-family:'Playfair Display',serif;font-weight:700;font-size:clamp(28px,7vw
 .hint{display:block;font-size:13px;color:var(--muted);margin-top:6px;line-height:1.4}
 .dot{display:inline-grid;place-items:center;min-width:22px;height:22px;padding:0 6px;border-radius:999px;background:linear-gradient(90deg,#cbaa4f,#dfbd67);color:#0B1629;font-size:12px;font-weight:700;margin-left:4px}
 .notif{grid-column:1/-1;border-color:var(--gold);color:var(--gold2)}
-.notif.on{border-color:#5FBF8A;color:#8FD9AE}
+.ptop{display:flex;justify-content:flex-end;margin:-20px -8px 4px;min-height:34px}
+.npill{font:inherit;font-size:13px;line-height:1;padding:9px 14px;border-radius:999px;border:1px solid rgba(240,235,225,.18);background:transparent;color:#C9CED8;cursor:pointer}
+.npill.ask{border-color:var(--gold);color:var(--gold2)}
+.npill.on{border-color:rgba(95,191,138,.5);color:#8FD9AE}
+.npill:disabled{opacity:.5}
+.ntoast{position:fixed;left:50%;width:max-content;bottom:calc(24px + env(safe-area-inset-bottom,0px));transform:translateX(-50%);max-width:calc(100% - 32px);background:#13233D;border:1px solid rgba(240,235,225,.18);color:var(--cream);border-radius:999px;padding:10px 16px;font-size:14px;z-index:50;text-align:center}
 .nrow{display:flex;align-items:center;justify-content:space-between;gap:14px;text-align:left;color:var(--cream);font-size:16px;padding:14px;border:1px solid rgba(240,235,225,.15);border-radius:16px;background:#0A1424}
 .sw{position:relative;flex:none;width:58px;height:34px;border-radius:999px;border:0;background:#3A4A63;cursor:pointer;transition:background .2s}
 .sw::after{content:"";position:absolute;top:4px;left:4px;width:26px;height:26px;border-radius:50%;background:#fff;transition:transform .2s}
@@ -71,6 +76,7 @@ h1{font-family:'Playfair Display',serif;font-weight:700;font-size:clamp(28px,7vw
 <body>
 <main class="wrap">
   <div class="panel">
+    <div class="ptop"><button class="npill" type="button" id="b-notif" hidden><span id="b-notif-t">🔔 Activer</span></button></div>
     <img class="logo" src="logo.png" alt="PHENO&amp;CO Barbershop, depuis 2009">
     <h1>Votre salon, à portée de main</h1>
     <p class="sub">Tous vos accès au même endroit</p>
@@ -93,9 +99,6 @@ h1{font-family:'Playfair Display',serif;font-weight:700;font-size:clamp(28px,7vw
       <a class="btn full" href="https://phenoandcofidelite.netlify.app/#msg" rel="noopener">
         <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 5h16v11H8l-4 4z"/><path d="M8 9h8M8 12h5"/></svg>Mes messages<span class="dot" id="msg-dot" hidden></span>
       </a>
-      <button class="btn notif" type="button" id="b-notif" hidden>
-        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9"/><path d="M10.3 21a1.94 1.94 0 0 0 3.4 0"/></svg><span id="b-notif-t">Activer les notifications</span>
-      </button>
       <a class="btn" href="https://wa.me/33769432605" target="_blank" rel="noopener">
         <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M21 12a9 9 0 0 1-13.4 7.8L3 21l1.3-4.4A9 9 0 1 1 21 12z"/></svg>WhatsApp
       </a>
@@ -169,6 +172,7 @@ h1{font-family:'Playfair Display',serif;font-weight:700;font-size:clamp(28px,7vw
   <p class="foot">PHENO&amp;CO Barbershop · depuis 2009</p>
 </main>
 
+<div class="ntoast" id="n-toast" role="status" hidden></div>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.min.js"></script>
 <script>
 (function () {
@@ -231,8 +235,8 @@ h1{font-family:'Playfair Display',serif;font-weight:700;font-size:clamp(28px,7vw
     var b = $('b-notif');
     if (!(pushSupported() || isIOS())) { b.hidden = true; return; }
     var st = await notifState();
-    b.hidden = false; b.classList.toggle('on', st === 'on');
-    $('b-notif-t').textContent = st === 'on' ? 'Notifications activées ✓' : st === 'off' ? 'Notifications désactivées' : 'Activer les notifications';
+    b.hidden = false; b.dataset.st = st; b.classList.toggle('on', st === 'on'); b.classList.toggle('ask', st === 'new');
+    $('b-notif-t').textContent = st === 'on' ? '🔔 Notifs : oui' : st === 'off' ? '🔕 Notifs : non' : '🔔 Activer';
     if (!$('notif').hidden && !$('n-set').hidden) showSet(st);
   }
   function showSet(st) {
@@ -271,7 +275,22 @@ h1{font-family:'Playfair Display',serif;font-weight:700;font-size:clamp(28px,7vw
     if (!pushSupported()) { $('n-ios').hidden = !isIOS(); if (!isIOS()) { $('n-text').textContent = 'Ce navigateur ne permet pas les notifications.'; } return; }
     if (getKey()) $('n-allow').hidden = false; else $('f-notif').hidden = false;
   }
-  $('b-notif').addEventListener('click', openNotif);
+  var toastT = null;
+  function toast(t) { var el = $('n-toast'); el.textContent = t; el.hidden = false; clearTimeout(toastT); toastT = setTimeout(function () { el.hidden = true; }, 3200); }
+  // Pastille en haut à droite : un toucher = oui / non (la première fois, on passe par le numéro)
+  $('b-notif').addEventListener('click', async function () {
+    var b = this, st = b.dataset.st;
+    var direct = pushSupported() && getKey() && Notification.permission === 'granted';
+    if (st === 'on' && direct) {
+      b.disabled = true; var ok = await unsubscribe(); if (ok) offFlag(true); b.disabled = false; await refreshNotifBtn();
+      toast(ok ? '🔕 Notifications coupées' : 'Impossible pour le moment. Réessaie.'); return;
+    }
+    if (st === 'off' && direct) {
+      b.disabled = true; var e = { textContent: '' }; var ok2 = await subscribe(e); b.disabled = false; await refreshNotifBtn();
+      toast(ok2 ? '🔔 Notifications remises' : (e.textContent || 'Impossible pour le moment. Réessaie.')); return;
+    }
+    openNotif();
+  });
   $('n-sw').addEventListener('click', async function () {
     var sw = this, turnOn = sw.getAttribute('aria-checked') !== 'true', err = $('n-err3');
     sw.disabled = true; err.textContent = '';
@@ -359,7 +378,7 @@ h1{font-family:'Playfair Display',serif;font-weight:700;font-size:clamp(28px,7vw
 // Mise a jour automatique : a chaque ouverture ou retour sur l'appli, le hub verifie s'il existe
 // une nouvelle version publiee et se recharge tout seul. Changer HUB_VERSION a chaque modification.
 (function () {
-  var HUB_VERSION = '2026-11-07-notif2';
+  var HUB_VERSION = '2026-11-07-pill1';
   var busy = false, last = 0;
   function check() {
     var now = Date.now();
